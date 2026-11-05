@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CYBER WORM: MATH BATTLE by : si_momon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #030712;
+      font-family: 'Rajdhani', sans-serif;
+      color: #f3f4f6;
+    }
+    .font-orbitron {
+      font-family: 'Orbitron', monospace, sans-serif;
+    }
+    .glass-panel {
+      background: rgba(10, 16, 32, 0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 9999px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(0, 240, 255, 0.4);
+      border-radius: 9999px;
+    }
+    @keyframes pulse-slow {
+      0%, 100% { transform: scale(1); opacity: 0.95; }
+      50% { transform: scale(1.03); opacity: 1; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="w-screen h-screen relative bg-slate-950 overflow-hidden">
+
+  <!-- Main Game Canvas -->
+  <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block z-0"></canvas>
+
+  <!-- TOP IN-GAME HUD -->
+  <header id="gameHUD" class="absolute top-0 left-0 right-0 z-10 px-3 py-2 flex items-center justify-between pointer-events-none transition-opacity duration-300">
+    <!-- Player 1 Status Card -->
+    <div id="p1HudCard" class="glass-panel rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 border-l-4 flex items-center gap-2.5 sm:gap-3 w-40 sm:w-56 pointer-events-auto">
+      <div id="p1HudAvatar" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-orbitron font-black text-xs sm:text-sm border shadow-md">
+        P1
+      </div>
+      <div class="overflow-hidden">
+        <div id="p1HudName" class="text-xs uppercase tracking-wider font-bold truncate">PLAYER 1</div>
+        <div class="flex items-baseline gap-1">
+          <span id="p1SegmentCount" class="font-orbitron text-lg sm:text-2xl font-black text-white">5</span>
+          <span class="text-[10px] text-slate-300 uppercase font-semibold">Segs</span>
+          <span id="p1TargetProgress" class="text-[10px] text-yellow-300 font-mono hidden">/ 25</span>
+        </div>
+        <div id="p1ComboBadge" class="text-[10px] text-yellow-300 font-orbitron font-bold opacity-0 transition-opacity">COMBO x2!</div>
+      </div>
+    </div>
+
+    <!-- Center: Target Question, Mode/Timer & Quick Action Buttons -->
+    <div class="flex flex-col items-center pointer-events-auto">
+      <!-- Question Billboard -->
+      <div id="questionContainer" class="glass-panel px-5 py-1.5 sm:px-6 sm:py-2 rounded-2xl border border-cyan-500/40 shadow-[0_0_25px_rgba(0,240,255,0.25)] flex flex-col items-center min-w-[180px] sm:min-w-[240px]">
+        <span id="questionCategoryTag" class="text-[9px] tracking-widest text-slate-400 uppercase font-bold">SOAL PERKALIAN</span>
+        <div id="mathQuestion" class="font-orbitron font-black text-2xl sm:text-4xl tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]">
+          7 × 8 = ?
+        </div>
+        <div id="questionPrompt" class="text-[9px] sm:text-[10px] text-cyan-300 font-semibold tracking-wide">TABRAK GELEMBUNG BENAR!</div>
+      </div>
+
+      <!-- Match Info Pill & Top Controls -->
+      <div class="mt-1 flex items-center gap-1.5">
+        <div id="timerBadge" class="px-3 py-0.5 rounded-full glass-panel border border-slate-700/80 font-orbitron font-bold text-xs sm:text-sm text-slate-200 tracking-wider flex items-center gap-1 shadow-md">
+          <span id="modeIcon">⏱️</span>
+          <span id="timerText">01:00</span>
+        </div>
+        <button id="btnPauseGame" title="Pause Game" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
+          ⏸️
+        </button>
+        <button id="btnToggleAudio" title="Mute/Unmute Audio" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
+          🔊
+        </button>
+        <button id="btnToggleFullscreen" title="Layar Penuh" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
+          ⛶
+        </button>
+      </div>
+    </div>
+
+    <!-- Player 2 Status Card -->
+    <div id="p2HudCard" class="glass-panel rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 border-r-4 flex items-center justify-end gap-2.5 sm:gap-3 w-40 sm:w-56 text-right pointer-events-auto">
+      <div class="overflow-hidden">
+        <div id="p2HudName" class="text-xs uppercase tracking-wider font-bold truncate">PLAYER 2</div>
+        <div class="flex items-baseline justify-end gap-1">
+          <span id="p2SegmentCount" class="font-orbitron text-lg sm:text-2xl font-black text-white">5</span>
+          <span class="text-[10px] text-slate-300 uppercase font-semibold">Segs</span>
+          <span id="p2TargetProgress" class="text-[10px] text-yellow-300 font-mono hidden">/ 25</span>
+        </div>
+        <div id="p2ComboBadge" class="text-[10px] text-yellow-300 font-orbitron font-bold opacity-0 transition-opacity">COMBO x2!</div>
+      </div>
+      <div id="p2HudAvatar" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-orbitron font-black text-xs sm:text-sm border shadow-md">
+        P2
+      </div>
+    </div>
+  </header>
+
+  <!-- LAST CHANCE ALERT BANNER (Active in final 10s of Time Attack) -->
+  <div id="lastChanceBanner" class="absolute top-28 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-0 transition-all duration-300 transform scale-90">
+    <div class="bg-red-600/90 text-white font-orbitron font-black text-xs sm:text-sm px-6 py-1 rounded-full uppercase tracking-widest border border-yellow-300 shadow-[0_0_20px_#ff0000] animate-pulse">
+      ⚠️ LAST CHANCE MODE: DOUBLE TENSION! ⚠️
+    </div>
+  </div>
+
+  <!-- VIRTUAL JOYSTICK OVERLAYS -->
+  <!-- Player 1 Joystick Area (Bottom Left) -->
+  <div id="joystickZoneP1" class="absolute bottom-4 left-4 w-44 h-44 sm:w-52 sm:h-52 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
+    <div id="joyBaseP1" class="w-32 h-32 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
+      <div id="joyStickP1" class="w-14 h-14 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
+        <span class="font-orbitron font-bold text-[10px] text-slate-900">P1</span>
+      </div>
+    </div>
+    <span id="hintP1" class="absolute bottom-1 text-[10px] font-bold uppercase tracking-widest pointer-events-none opacity-80">WASD / TOUCH</span>
+  </div>
+
+  <!-- Player 2 Joystick Area (Bottom Right) -->
+  <div id="joystickZoneP2" class="absolute bottom-4 right-4 w-44 h-44 sm:w-52 sm:h-52 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
+    <div id="joyBaseP2" class="w-32 h-32 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
+      <div id="joyStickP2" class="w-14 h-14 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
+        <span class="font-orbitron font-bold text-[10px] text-white">P2</span>
+      </div>
+    </div>
+    <span id="hintP2" class="absolute bottom-1 text-[10px] font-bold uppercase tracking-widest pointer-events-none opacity-80">ARROWS / TOUCH</span>
+  </div>
+
+  <!-- ==================== MAIN SCREEN WITH INTEGRATED SETTINGS & COLOR CUSTOMIZATION ==================== -->
+  <div id="menuScreen" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-3 sm:px-6 py-4 overflow-y-auto custom-scrollbar">
+    <div class="glass-panel max-w-4xl w-full rounded-3xl p-5 sm:p-7 border border-cyan-500/30 shadow-[0_0_50px_rgba(0,240,255,0.18)] relative my-auto">
+      
+      <!-- Header Title -->
+      <div class="text-center mb-5">
+        <div class="inline-block px-3 py-0.5 rounded-full bg-cyan-900/40 border border-cyan-400/30 text-cyan-300 font-orbitron text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-1">
+          Futuristic 2-Player Multiplication Arcade
+        </div>
+        <h1 class="font-orbitron text-3xl sm:text-5xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-rose-500 drop-shadow-md">
+          CYBER WORM
+        </h1>
+        <p class="font-orbitron text-xs sm:text-sm tracking-widest text-slate-400">
+          MATH BATTLE <span class="text-cyan-400 font-bold">by : si_momon</span>
+        </p>
+      </div>
+
+      <!-- Integrated 2-Player Character Customization & 3D Preview Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        <!-- PLAYER 1 CUSTOMIZATION CARD -->
+        <div id="cardP1Config" class="p-4 rounded-2xl bg-slate-900/70 border border-cyan-500/40 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]"></span>
+              <span class="font-orbitron text-xs font-bold text-cyan-300">PLAYER 1 (SISI KIRI)</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">[W, A, S, D]</span>
+          </div>
+
+          <!-- Name Input -->
+          <div>
+            <label class="block text-[11px] text-slate-300 font-bold mb-1">Nama Pemain 1:</label>
+            <input id="inputP1Name" type="text" value="Cyber Blue" maxlength="12" class="w-full px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-700 text-white font-orbitron text-xs focus:border-cyan-400 outline-none">
+          </div>
+
+          <!-- Live 3D Worm Preview Canvas -->
+          <div class="h-20 w-full rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center relative overflow-hidden">
+            <canvas id="previewCanvasP1" width="340" height="80" class="w-full h-full"></canvas>
+            <span class="absolute bottom-1 right-2 text-[9px] text-slate-500 font-mono">Live 3D Preview</span>
+          </div>
+
+          <!-- Color Skin Selection Palette -->
+          <div>
+            <label class="block text-[10px] text-slate-300 font-bold mb-1.5 uppercase">Pilih Skin Neon P1:</label>
+            <div id="paletteP1" class="flex items-center gap-2 flex-wrap">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- PLAYER 2 CUSTOMIZATION CARD -->
+        <div id="cardP2Config" class="p-4 rounded-2xl bg-slate-900/70 border border-rose-500/40 flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-3.5 h-3.5 rounded-full bg-rose-500 shadow-[0_0_8px_#ff0055]"></span>
+              <span class="font-orbitron text-xs font-bold text-rose-300">PLAYER 2 (SISI KANAN)</span>
+            </div>
+            <span class="text-[10px] text-slate-400 font-mono">[Panah Arah]</span>
+          </div>
+
+          <!-- Name Input -->
+          <div>
+            <label class="block text-[11px] text-slate-300 font-bold mb-1">Nama Pemain 2:</label>
+            <input id="inputP2Name" type="text" value="Neon Red" maxlength="12" class="w-full px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-700 text-white font-orbitron text-xs focus:border-rose-400 outline-none">
+          </div>
+
+          <!-- Live 3D Worm Preview Canvas -->
+          <div class="h-20 w-full rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center relative overflow-hidden">
+            <canvas id="previewCanvasP2" width="340" height="80" class="w-full h-full"></canvas>
+            <span class="absolute bottom-1 right-2 text-[9px] text-slate-500 font-mono">Live 3D Preview</span>
+          </div>
+
+          <!-- Color Skin Selection Palette -->
+          <div>
+            <label class="block text-[10px] text-slate-300 font-bold mb-1.5 uppercase">Pilih Skin Neon P2:</label>
+            <div id="paletteP2" class="flex items-center gap-2 flex-wrap">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN CONFIGURATION: PRESETS, MODE, SPEED, JOYSTICK -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs">
+        
+        <!-- Left Column: Math Curriculum Presets -->
+        <div>
+          <label class="block font-orbitron text-xs text-cyan-300 font-bold uppercase mb-2">
+            📚 Materi Perkalian Dasar SD:
+          </label>
+          <div class="grid grid-cols-2 gap-1.5 mb-2">
+            <button class="preset-rule-btn py-2 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k2">
+              <span class="block font-bold text-cyan-300">Kelas 2 SD</span>
+              <span class="text-[10px] text-slate-400">×1, ×2, ×5, ×10</span>
+            </button>
+            <button class="preset-rule-btn py-2 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k3">
+              <span class="block font-bold text-cyan-300">Kelas 3 SD</span>
+              <span class="text-[10px] text-slate-400">×3, ×4, ×6</span>
+            </button>
+            <button class="preset-rule-btn py-2 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k4">
+              <span class="block font-bold text-cyan-300">Kelas 4 SD</span>
+              <span class="text-[10px] text-slate-400">×7, ×8, ×9</span>
+            </button>
+            <button class="preset-rule-btn py-2 px-2 rounded-lg border border-cyan-500/60 bg-cyan-500/20 font-semibold text-white transition text-left" data-type="master">
+              <span class="block font-bold text-cyan-200">Master Campuran</span>
+              <span class="text-[10px] text-slate-300">Tabel 1 – 10 Acak</span>
+            </button>
+          </div>
+          <!-- Custom Range Option -->
+          <div class="flex items-center gap-2 pt-1 text-slate-300">
+            <span class="text-[11px] font-semibold">Custom Rentang:</span>
+            <input id="settingMinMult" type="number" min="1" max="10" value="1" class="w-12 px-1.5 py-0.5 bg-slate-950 border border-slate-700 rounded text-center text-cyan-300 font-bold text-xs">
+            <span>sampai</span>
+            <input id="settingMaxMult" type="number" min="1" max="12" value="10" class="w-12 px-1.5 py-0.5 bg-slate-950 border border-slate-700 rounded text-center text-cyan-300 font-bold text-xs">
+          </div>
+        </div>
+
+        <!-- Right Column: Game Mode & Control Ergonomics -->
+        <div>
+          <label class="block font-orbitron text-xs text-yellow-300 font-bold uppercase mb-2">
+            🏆 Mode Game & Pengaturan:
+          </label>
+
+          <!-- Game Mode Selector -->
+          <div class="grid grid-cols-2 gap-2 mb-2.5">
+            <button id="btnModeTime" class="mode-select-btn py-1.5 px-3 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1.5">
+              <span>⏱️</span> Time Attack
+            </button>
+            <button id="btnModeTarget" class="mode-select-btn py-1.5 px-3 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1.5">
+              <span>🎯</span> Target Segmen
+            </button>
+          </div>
+
+          <!-- Time Attack Options -->
+          <div id="timeAttackContainer" class="flex items-center gap-1.5 flex-wrap mb-2.5">
+            <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-950/40 text-[11px] text-slate-200" data-sec="30">30s</button>
+            <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/60 bg-cyan-500/20 text-[11px] text-cyan-200 font-bold" data-sec="60">1 Menit</button>
+            <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-950/40 text-[11px] text-slate-200" data-sec="120">2 Menit</button>
+            <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-950/40 text-[11px] text-slate-200" data-sec="180">3 Menit</button>
+          </div>
+
+          <!-- Target Segment Options (Hidden if Time Attack) -->
+          <div id="targetSegmentContainer" class="hidden items-center gap-1.5 flex-wrap mb-2.5">
+            <span class="text-[11px] text-slate-300">Target Menang:</span>
+            <button class="target-btn px-2.5 py-1 rounded-md border border-yellow-500/30 bg-yellow-950/40 text-[11px] text-slate-200" data-target="20">20 Segmen</button>
+            <button class="target-btn px-2.5 py-1 rounded-md border border-yellow-500/60 bg-yellow-500/20 text-[11px] text-yellow-200 font-bold" data-target="25">25 Segmen</button>
+            <button class="target-btn px-2.5 py-1 rounded-md border border-yellow-500/30 bg-yellow-950/40 text-[11px] text-slate-200" data-target="30">30 Segmen</button>
+          </div>
+
+          <!-- Speed & Joystick Size Dropdowns -->
+          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+            <div>
+              <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Kecepatan Ular:</label>
+              <select id="selectWormSpeed" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-slate-200 text-xs">
+                <option value="2.9">Santai (Pelan)</option>
+                <option value="3.8" selected>Normal</option>
+                <option value="4.8">Turbo (Cepat)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Ukuran Joystick:</label>
+              <select id="selectJoySize" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-slate-200 text-xs">
+                <option value="sm">Kecil</option>
+                <option value="md" selected>Sedang</option>
+                <option value="lg">Besar</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons Row -->
+      <div class="flex flex-col sm:flex-row items-center gap-3">
+        <button id="btnStartGame" class="w-full sm:flex-1 py-4 rounded-2xl font-orbitron font-black text-lg sm:text-xl tracking-wider text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-400 hover:brightness-110 active:scale-98 transition shadow-[0_0_25px_rgba(0,240,255,0.6)]">
+          ⚡ MULAI PERTANDINGAN ⚡
+        </button>
+        <button id="btnOpenHowTo" class="w-full sm:w-auto px-6 py-4 rounded-2xl font-orbitron font-bold text-xs sm:text-sm tracking-wider text-slate-300 glass-panel border border-slate-700 hover:bg-slate-800 active:scale-98 transition">
+          📖 CARA MAIN
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- HOW TO PLAY MODAL -->
+  <div id="howToModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4">
+    <div class="glass-panel max-w-md w-full rounded-3xl p-6 border border-cyan-500/40 text-slate-200">
+      <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+        <h2 class="font-orbitron font-black text-lg text-cyan-300">CARA BERMAIN</h2>
+        <button id="btnCloseHowTo" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 text-sm font-bold">✕</button>
+      </div>
+      <div class="space-y-3 text-xs leading-relaxed text-slate-300">
+        <p>🎮 <strong class="text-white">Dua Pemain:</strong> Player 1 di kiri, Player 2 di kanan layar bersamaan dengan multitouch joystick atau keyboard.</p>
+        <p>🎯 <strong class="text-white">Soal Perkalian:</strong> Perhatikan soal di bagian atas arena (contoh: 7 × 8 = ?).</p>
+        <p>✨ <strong class="text-emerald-400">Jawaban Benar:</strong> Tabrak gelembung jawaban yang benar! Tubuh ular bertambah +2 segmen. Jika benar 3 kali berturut-turut (streak), dapatkan bonus ekstra +2 segmen!</p>
+        <p>💥 <strong class="text-rose-400">Jawaban Salah:</strong> Tubuh ular berkurang 1 segmen (panjang minimal 3).</p>
+        <p>🏆 <strong class="text-yellow-300">Kemenangan:</strong> Ditentukan dari panjang ular terbanyak saat waktu habis atau yang pertama kali mencapai target segmen!</p>
+      </div>
+      <button id="btnGotIt" class="mt-5 w-full py-3 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30">
+        MENGERTI, SIAP TANDING!
+      </button>
+    </div>
+  </div>
+
+  <!-- IN-GAME PAUSE MODAL -->
+  <div id="pauseModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md px-4">
+    <div class="glass-panel max-w-sm w-full rounded-3xl p-6 border border-cyan-500/40 text-center">
+      <h2 class="font-orbitron font-black text-2xl text-cyan-300 mb-2">GAME PAUSED</h2>
+      <p class="text-xs text-slate-300 mb-5">Pertandingan dijeda sejenak.</p>
+      <div class="flex flex-col gap-2.5">
+        <button id="btnResumeGame" class="py-3 rounded-xl font-orbitron font-bold text-sm bg-gradient-to-r from-cyan-400 to-teal-300 text-slate-950">
+          ▶️ LANJUTKAN
+        </button>
+        <button id="btnRestartRound" class="py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+          🔄 ULANGI RONDE
+        </button>
+        <button id="btnQuitToMenu" class="py-2.5 rounded-xl font-orbitron font-bold text-xs bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40">
+          🏠 KEMBALI KE MENU
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COUNTDOWN OVERLAY (3, 2, 1, GO!) -->
+  <div id="countdownOverlay" class="absolute inset-0 z-20 pointer-events-none hidden flex items-center justify-center">
+    <div id="countdownNumber" class="font-orbitron font-black text-8xl sm:text-9xl text-cyan-300 drop-shadow-[0_0_35px_#00f0ff] animate-pulse">
+      3
+    </div>
+  </div>
+
+  <!-- VICTORY & RESULTS SCREEN -->
+  <div id="victoryModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4 py-4 overflow-y-auto custom-scrollbar">
+    <div class="glass-panel max-w-xl w-full rounded-3xl p-5 sm:p-7 border border-yellow-500/40 shadow-[0_0_60px_rgba(255,215,0,0.25)] text-center relative my-auto">
+      <div class="w-14 h-14 mx-auto mb-2 rounded-2xl bg-gradient-to-tr from-yellow-500 to-amber-200 flex items-center justify-center text-3xl shadow-[0_0_20px_#ffd700]">
+        🏆
+      </div>
+      <div id="winnerTextBadge" class="font-orbitron font-black text-2xl sm:text-3xl text-yellow-300 tracking-wider mb-1">
+        PLAYER 1 WINS!
+      </div>
+      <p id="winnerReason" class="text-xs text-slate-300 mb-5 font-semibold">Tumbuh menjadi cacing digital terpanjang!</p>
+
+      <!-- Comparison Stats Cards -->
+      <div class="grid grid-cols-2 gap-3 mb-5 text-left">
+        <!-- P1 Summary -->
+        <div id="victoryCardP1" class="p-3.5 rounded-2xl bg-slate-900/80 border">
+          <div class="font-orbitron font-bold text-xs mb-2 flex items-center justify-between">
+            <span id="statP1Name" class="truncate">PLAYER 1</span>
+            <span id="statP1Result" class="text-[10px] px-1.5 py-0.5 rounded font-bold">WINNER</span>
+          </div>
+          <div class="space-y-1 text-xs text-slate-300">
+            <div class="flex justify-between"><span>Panjang Akhir:</span> <b id="statP1Length" class="text-white font-mono">15 segs</b></div>
+            <div class="flex justify-between"><span>Benar:</span> <b id="statP1Correct" class="text-emerald-400 font-mono">8</b></div>
+            <div class="flex justify-between"><span>Salah:</span> <b id="statP1Wrong" class="text-rose-400 font-mono">1</b></div>
+            <div class="flex justify-between"><span>Akurasi:</span> <b id="statP1Accuracy" class="font-mono">88%</b></div>
+            <div class="flex justify-between"><span>Max Streak:</span> <b id="statP1Combo" class="text-yellow-400 font-mono">4x</b></div>
+          </div>
+        </div>
+
+        <!-- P2 Summary -->
+        <div id="victoryCardP2" class="p-3.5 rounded-2xl bg-slate-900/80 border">
+          <div class="font-orbitron font-bold text-xs mb-2 flex items-center justify-between">
+            <span id="statP2Name" class="truncate">PLAYER 2</span>
+            <span id="statP2Result" class="text-[10px] px-1.5 py-0.5 rounded font-bold">RUNNER UP</span>
+          </div>
+          <div class="space-y-1 text-xs text-slate-300">
+            <div class="flex justify-between"><span>Panjang Akhir:</span> <b id="statP2Length" class="text-white font-mono">11 segs</b></div>
+            <div class="flex justify-between"><span>Benar:</span> <b id="statP2Correct" class="text-emerald-400 font-mono">5</b></div>
+            <div class="flex justify-between"><span>Salah:</span> <b id="statP2Wrong" class="text-rose-400 font-mono">2</b></div>
+            <div class="flex justify-between"><span>Akurasi:</span> <b id="statP2Accuracy" class="font-mono">71%</b></div>
+            <div class="flex justify-between"><span>Max Streak:</span> <b id="statP2Combo" class="text-yellow-400 font-mono">2x</b></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons with Review Feature -->
+      <div class="flex flex-col gap-2">
+        <button id="btnOpenReview" class="w-full py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 flex items-center justify-center gap-2">
+          <span>📝</span> LIHAT RIWAYAT & PEMBAHASAN SOAL
+        </button>
+        <div class="grid grid-cols-2 gap-2 mt-1">
+          <button id="btnRematch" class="py-3 rounded-xl font-orbitron font-black text-sm bg-gradient-to-r from-yellow-400 to-amber-300 text-slate-950 hover:brightness-110 active:scale-98 transition shadow-[0_0_20px_rgba(255,215,0,0.4)]">
+            🔄 REMATCH
+          </button>
+          <button id="btnBackToMenu" class="py-3 rounded-xl font-orbitron font-bold text-sm bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700">
+            🏠 MENU UTAMA
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- QUESTION HISTORY & EDUCATIONAL REVIEW MODAL -->
+  <div id="reviewModal" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4 py-6">
+    <div class="glass-panel max-w-lg w-full rounded-3xl p-6 border border-cyan-500/40 text-slate-200 max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
+        <h3 class="font-orbitron font-black text-sm text-cyan-300 flex items-center gap-2">
+          <span>📝</span> PEMBAHASAN SOAL RONDE INI
+        </h3>
+        <button id="btnCloseReview" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 text-xs font-bold">✕</button>
+      </div>
+
+      <!-- Scrollable Question History Table -->
+      <div id="reviewList" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar text-xs">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <button id="btnDismissReview" class="mt-4 w-full py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700">
+        TUTUP PEMBAHASAN
+      </button>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT GAME LOGIC -->
+  <script>
+    /**
+     * CYBER WORM: MATH BATTLE by si_momon
+     * Futuristic Elementary Multiplication Game
+     */
+
+    // --- COLOR SKINS DEFINITION (3D Glossy Materials) ---
+    const SKINS = {
+      blue: {
+        id: 'blue',
+        name: 'Electric Blue',
+        hex: '#00f0ff',
+        tailColors: ['#e0ffff', '#00f0ff', '#0066cc', '#001a4d'],
+        headColors: ['#ffffff', '#00f0ff', '#0055bb', '#001a44'],
+        border: 'border-cyan-400',
+        textClass: 'text-cyan-300',
+        glow: 'rgba(0, 240, 255, 0.6)'
+      },
+      red: {
+        id: 'red',
+        name: 'Neon Red',
+        hex: '#ff0055',
+        tailColors: ['#ffe5ec', '#ff0055', '#b3003b', '#4d0019'],
+        headColors: ['#ffffff', '#ff1a66', '#aa0033', '#3b0012'],
+        border: 'border-rose-500',
+        textClass: 'text-rose-400',
+        glow: 'rgba(255, 0, 85, 0.6)'
+      },
+      green: {
+        id: 'green',
+        name: 'Lime Cyber',
+        hex: '#22c55e',
+        tailColors: ['#dcfce7', '#22c55e', '#15803d', '#052e16'],
+        headColors: ['#ffffff', '#4ade80', '#16a34a', '#14532d'],
+        border: 'border-emerald-400',
+        textClass: 'text-emerald-300',
+        glow: 'rgba(34, 197, 94, 0.6)'
+      },
+      purple: {
+        id: 'purple',
+        name: 'Plasma Violet',
+        hex: '#a855f7',
+        tailColors: ['#f3e8ff', '#a855f7', '#6b21a8', '#3b0764'],
+        headColors: ['#ffffff', '#c084fc', '#9333ea', '#581c87'],
+        border: 'border-purple-400',
+        textClass: 'text-purple-300',
+        glow: 'rgba(168, 85, 247, 0.6)'
+      },
+      yellow: {
+        id: 'yellow',
+        name: 'Sunburst Gold',
+        hex: '#eab308',
+        tailColors: ['#fef9c3', '#eab308', '#a16207', '#422006'],
+        headColors: ['#ffffff', '#facc15', '#ca8a04', '#713f12'],
+        border: 'border-amber-400',
+        textClass: 'text-amber-300',
+        glow: 'rgba(234, 179, 8, 0.6)'
+      },
+      orange: {
+        id: 'orange',
+        name: 'Cyber Orange',
+        hex: '#f97316',
+        tailColors: ['#ffedd5', '#f97316', '#c2410c', '#431407'],
+        headColors: ['#ffffff', '#fb923c', '#ea580c', '#7c2d12'],
+        border: 'border-orange-400',
+        textClass: 'text-orange-300',
+        glow: 'rgba(249, 115, 22, 0.6)'
+      }
+    };
+
+    // --- PROCEDURAL AUDIO SYNTHESIZER ---
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) this.ctx = new AudioContext();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+      playTone(freq, type = 'sine', duration = 0.15, vol = 0.2, pitchDecay = 0) {
+        if (!this.enabled || !this.ctx) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const now = this.ctx.currentTime;
+          osc.type = type;
+          osc.frequency.setValueAtTime(freq, now);
+          if (pitchDecay !== 0) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(10, freq + pitchDecay), now + duration);
+          }
+          gain.gain.setValueAtTime(vol, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + duration);
+        } catch (e) {}
+      }
+      playPop() { this.playTone(320, 'triangle', 0.12, 0.25, 450); }
+      playCorrect() {
+        if (!this.enabled || !this.ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 'sine', 0.2, 0.2), idx * 60);
+        });
+      }
+      playWrong() {
+        if (!this.enabled || !this.ctx) return;
+        this.playTone(180, 'sawtooth', 0.25, 0.25, -80);
+        setTimeout(() => this.playTone(130, 'sawtooth', 0.3, 0.25, -50), 90);
+      }
+      playCountdown(final = false) {
+        this.playTone(final ? 880 : 440, 'sine', final ? 0.35 : 0.15, 0.3, final ? 100 : 0);
+      }
+      playLastChanceAlert() { this.playTone(660, 'square', 0.2, 0.15, -150); }
+      playVictory() {
+        if (!this.enabled || !this.ctx) return;
+        const melody = [523.25, 659.25, 783.99, 1046.50, 880, 1046.5];
+        melody.forEach((freq, idx) => {
+          setTimeout(() => this.playTone(freq, 'triangle', 0.3, 0.25), idx * 110);
+        });
+      }
+    }
+    const sound = new SoundEngine();
+
+    // --- GAME CONFIGURATION & STATE ---
+    const CONFIG = {
+      presetMode: 'master', // 'k2', 'k3', 'k4', 'master', 'custom'
+      multMin: 1,
+      multMax: 10,
+      gameMode: 'time', // 'time' or 'target'
+      matchDurationSec: 60,
+      targetSegments: 25,
+      initialSegments: 5,
+      wormSpeed: 3.8,
+      joySize: 'md',
+      segmentRadius: 18,
+      headRadius: 23,
+      bubbleRadius: 36
+    };
+
+    const GameState = {
+      MENU: 'MENU',
+      COUNTDOWN: 'COUNTDOWN',
+      PLAYING: 'PLAYING',
+      PAUSED: 'PAUSED',
+      FINISHED: 'FINISHED'
+    };
+
+    let currentState = GameState.MENU;
+    let matchTimeRemaining = 60;
+    let matchTimerInterval = null;
+    let lastChanceActive = false;
+    let countdownVal = 3;
+
+    // Player Configuration
+    let p1Config = { name: "Player 1", skinKey: 'blue' };
+    let p2Config = { name: "Player 2", skinKey: 'red' };
+
+    // Math Round History
+    let roundQuestionsHistory = [];
+    let currentQuestion = null;
+    let previousQuestionsKeys = [];
+
+    // --- 3D CARTOON WORM CLASS ---
+    class CyberWorm {
+      constructor(id, name, skinKey, startX, startY, angle) {
+        this.id = id;
+        this.name = name;
+        this.skinKey = skinKey;
+        this.x = startX;
+        this.y = startY;
+        this.angle = angle;
+        this.speed = CONFIG.wormSpeed;
+        this.targetCount = CONFIG.initialSegments;
+        this.segments = [];
+
+        const spacing = CONFIG.segmentRadius * 1.35;
+        for (let i = 0; i < this.targetCount; i++) {
+          this.segments.push({
+            x: startX - Math.cos(angle) * spacing * i,
+            y: startY - Math.sin(angle) * spacing * i,
+            scale: 1
+          });
+        }
+
+        this.inputVector = { x: 0, y: 0 };
+        this.hasAnsweredCurrent = false;
+        this.stats = { correct: 0, wrong: 0, combo: 0, maxCombo: 0 };
+        this.squirmPhase = Math.random() * Math.PI * 2;
+        this.statusBadge = null;
+      }
+
+      addSegments(num) {
+        this.targetCount += num;
+        for (let i = 0; i < num; i++) {
+          const last = this.segments[this.segments.length - 1];
+          this.segments.push({ x: last.x, y: last.y, scale: 0.1 });
+        }
+      }
+
+      removeSegment() {
+        if (this.targetCount > 3) {
+          this.targetCount--;
+          if (this.segments.length > 3) this.segments.pop();
+        }
+      }
+
+      update(arenaWidth, arenaHeight) {
+        this.squirmPhase += 0.12;
+
+        const mag = Math.hypot(this.inputVector.x, this.inputVector.y);
+        if (mag > 0.15) {
+          const targetAngle = Math.atan2(this.inputVector.y, this.inputVector.x);
+          let diff = targetAngle - this.angle;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          this.angle += diff * 0.18;
+        }
+
+        const squirmOffset = Math.sin(this.squirmPhase) * 0.35;
+        this.x += Math.cos(this.angle + squirmOffset) * this.speed;
+        this.y += Math.sin(this.angle + squirmOffset) * this.speed;
+
+        // Wall collision / containment
+        const pad = CONFIG.headRadius + 20;
+        if (this.x < pad) { this.x = pad; this.angle = Math.PI - this.angle; }
+        if (this.x > arenaWidth - pad) { this.x = arenaWidth - pad; this.angle = Math.PI - this.angle; }
+        if (this.y < pad + 65) { this.y = pad + 65; this.angle = -this.angle; }
+        if (this.y > arenaHeight - pad - 60) { this.y = arenaHeight - pad - 60; this.angle = -this.angle; }
+
+        // Segments kinematics
+        let leaderX = this.x;
+        let leaderY = this.y;
+        const segmentDist = CONFIG.segmentRadius * 1.25;
+
+        for (let i = 0; i < this.segments.length; i++) {
+          const seg = this.segments[i];
+          if (seg.scale < 1) seg.scale = Math.min(1, seg.scale + 0.08);
+
+          const dx = leaderX - seg.x;
+          const dy = leaderY - seg.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist > 0.001) {
+            const angleToLeader = Math.atan2(dy, dx);
+            seg.x = leaderX - Math.cos(angleToLeader) * segmentDist;
+            seg.y = leaderY - Math.sin(angleToLeader) * segmentDist;
+          }
+          leaderX = seg.x;
+          leaderY = seg.y;
+        }
+
+        if (this.statusBadge) {
+          this.statusBadge.life -= 0.02;
+          if (this.statusBadge.life <= 0) this.statusBadge = null;
+        }
+      }
+
+      draw(ctx) {
+        ctx.save();
+        const skin = SKINS[this.skinKey] || SKINS.blue;
+
+        ctx.shadowBlur = 18;
+        ctx.shadowColor = skin.glow;
+
+        // Draw body segments
+        for (let i = this.segments.length - 1; i >= 0; i--) {
+          const seg = this.segments[i];
+          const taper = (1 - (i / this.segments.length) * 0.45) * seg.scale;
+          const radius = CONFIG.segmentRadius * taper;
+
+          const lightX = seg.x - radius * 0.35;
+          const lightY = seg.y - radius * 0.35;
+          const grad = ctx.createRadialGradient(lightX, lightY, radius * 0.1, seg.x, seg.y, radius);
+          grad.addColorStop(0, skin.tailColors[0]);
+          grad.addColorStop(0.35, skin.tailColors[1]);
+          grad.addColorStop(0.75, skin.tailColors[2]);
+          grad.addColorStop(1, skin.tailColors[3]);
+
+          ctx.beginPath();
+          ctx.arc(seg.x, seg.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          ctx.lineWidth = 1.4;
+          ctx.strokeStyle = skin.hex;
+          ctx.stroke();
+        }
+
+        // Draw Head
+        const hRadius = CONFIG.headRadius;
+        const headGrad = ctx.createRadialGradient(
+          this.x - hRadius * 0.35, this.y - hRadius * 0.35, hRadius * 0.1,
+          this.x, this.y, hRadius
+        );
+        headGrad.addColorStop(0, skin.headColors[0]);
+        headGrad.addColorStop(0.35, skin.headColors[1]);
+        headGrad.addColorStop(0.8, skin.headColors[2]);
+        headGrad.addColorStop(1, skin.headColors[3]);
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, hRadius, 0, Math.PI * 2);
+        ctx.fillStyle = headGrad;
+        ctx.fill();
+
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+
+        // 3D Cartoon Eyes
+        const eyeOffsetDist = hRadius * 0.55;
+        const eyeAngleOffset = 0.55;
+        const eyeRadius = 6.5;
+        const pupilRadius = 3.2;
+
+        const leftEyeX = this.x + Math.cos(this.angle - eyeAngleOffset) * eyeOffsetDist;
+        const leftEyeY = this.y + Math.sin(this.angle - eyeAngleOffset) * eyeOffsetDist;
+        const rightEyeX = this.x + Math.cos(this.angle + eyeAngleOffset) * eyeOffsetDist;
+        const rightEyeY = this.y + Math.sin(this.angle + eyeAngleOffset) * eyeOffsetDist;
+
+        [ { x: leftEyeX, y: leftEyeY }, { x: rightEyeX, y: rightEyeY } ].forEach(pos => {
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, eyeRadius, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+          ctx.lineWidth = 1;
+          ctx.strokeStyle = '#050b14';
+          ctx.stroke();
+
+          const lookX = pos.x + Math.cos(this.angle) * 2.2;
+          const lookY = pos.y + Math.sin(this.angle) * 2.2;
+          ctx.beginPath();
+          ctx.arc(lookX, lookY, pupilRadius, 0, Math.PI * 2);
+          ctx.fillStyle = '#050b14';
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(lookX - 1.2, lookY - 1.2, 1.2, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffffff';
+          ctx.fill();
+        });
+
+        // Visor / Forehead Hologram Node
+        const antX = this.x + Math.cos(this.angle) * (hRadius * 0.9);
+        const antY = this.y + Math.sin(this.angle) * (hRadius * 0.9);
+        ctx.beginPath();
+        ctx.arc(antX, antY, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#ffffff';
+        ctx.fill();
+
+        // Floating Status Label
+        if (this.hasAnsweredCurrent) {
+          ctx.font = "bold 11px Orbitron, sans-serif";
+          ctx.fillStyle = '#4ade80';
+          ctx.textAlign = 'center';
+          ctx.fillText("LOCKED", this.x, this.y - hRadius - 12);
+        } else if (this.statusBadge) {
+          ctx.font = "bold 12px Orbitron, sans-serif";
+          ctx.fillStyle = this.statusBadge.color;
+          ctx.textAlign = 'center';
+          ctx.fillText(this.statusBadge.text, this.x, this.y - hRadius - 12);
+        }
+
+        ctx.restore();
+      }
+    }
+
+    // --- HOLOGRAPHIC ANSWER BUBBLE ---
+    class HologramBubble {
+      constructor(val, isCorrect, x, y) {
+        this.value = val;
+        this.isCorrect = isCorrect;
+        this.x = x;
+        this.y = y;
+        this.radius = CONFIG.bubbleRadius;
+        this.pulse = Math.random() * Math.PI * 2;
+        this.alive = true;
+      }
+      update() { this.pulse += 0.04; }
+      draw(ctx) {
+        if (!this.alive) return;
+        ctx.save();
+        const currentR = this.radius + Math.sin(this.pulse) * 2.5;
+
+        ctx.shadowBlur = 16;
+        ctx.shadowColor = 'rgba(0, 240, 255, 0.7)';
+
+        const grad = ctx.createRadialGradient(
+          this.x - currentR * 0.3, this.y - currentR * 0.3, currentR * 0.1,
+          this.x, this.y, currentR
+        );
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+        grad.addColorStop(0.3, 'rgba(0, 240, 255, 0.45)');
+        grad.addColorStop(0.75, 'rgba(20, 40, 80, 0.65)');
+        grad.addColorStop(1, 'rgba(0, 150, 255, 0.9)');
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, currentR, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, currentR + 3, 0, Math.PI * 2);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.75)';
+        ctx.stroke();
+
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#00f0ff';
+        ctx.font = "900 24px Orbitron, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.value.toString(), this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+    // --- PARTICLES & FLOATING TOASTS ---
+    class Particle {
+      constructor(x, y, color, speedScale = 1) {
+        this.x = x; this.y = y; this.color = color;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (Math.random() * 4 + 2) * speedScale;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.025 + 0.015;
+        this.size = Math.random() * 4 + 2;
+      }
+      update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
+      draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, this.alpha);
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    class FloatingToast {
+      constructor(text, x, y, color) {
+        this.text = text; this.x = x; this.y = y; this.color = color;
+        this.vy = -1.6; this.alpha = 1; this.life = 1.0;
+      }
+      update() { this.y += this.vy; this.life -= 0.02; this.alpha = Math.max(0, this.life); }
+      draw(ctx) {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.font = "900 16px Orbitron, sans-serif";
+        ctx.fillStyle = this.color;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = this.color;
+        ctx.textAlign = "center";
+        ctx.fillText(this.text, this.x, this.y);
+        ctx.restore();
+      }
+    }
+
+    // --- CANVAS & ARENA SETUP ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    let wormP1 = null;
+    let wormP2 = null;
+    let bubbles = [];
+    let particles = [];
+    let floatingTexts = [];
+    let ambientParticles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      ambientParticles = [];
+      for (let i = 0; i < 40; i++) {
+        ambientParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          radius: Math.random() * 1.8 + 0.5,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+          alpha: Math.random() * 0.5 + 0.2
+        });
+      }
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // --- MATHEMATICAL QUESTION ENGINE ---
+    function generateQuestion() {
+      let a, b, answer, key;
+      let attempts = 0;
+
+      const pickFactor = () => {
+        if (CONFIG.presetMode === 'k2') {
+          const pool = [1, 2, 5, 10];
+          return pool[Math.floor(Math.random() * pool.length)];
+        } else if (CONFIG.presetMode === 'k3') {
+          const pool = [3, 4, 6];
+          return pool[Math.floor(Math.random() * pool.length)];
+        } else if (CONFIG.presetMode === 'k4') {
+          const pool = [7, 8, 9];
+          return pool[Math.floor(Math.random() * pool.length)];
+        } else {
+          const min = Math.min(CONFIG.multMin, CONFIG.multMax);
+          const max = Math.max(CONFIG.multMin, CONFIG.multMax);
+          return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+      };
+
+      do {
+        a = pickFactor();
+        b = Math.floor(Math.random() * 10) + 1;
+        answer = a * b;
+        key = `${a}x${b}`;
+        attempts++;
+      } while (previousQuestionsKeys.includes(key) && attempts < 25);
+
+      previousQuestionsKeys.push(key);
+      if (previousQuestionsKeys.length > 6) previousQuestionsKeys.shift();
+
+      // Distractors
+      const set = new Set([answer]);
+      const potential = [
+        answer + a, answer - a, answer + b, answer - b,
+        (a + 1) * b, (a - 1) * b,
+        answer + 10, answer - 10,
+        answer + (Math.random() > 0.5 ? 2 : -2),
+        answer + (Math.random() > 0.5 ? 4 : -4)
+      ];
+
+      for (let cand of potential) {
+        if (cand > 0 && cand !== answer && !set.has(cand)) {
+          set.add(cand);
+          if (set.size === 4) break;
+        }
+      }
+      while (set.size < 4) {
+        const offset = (Math.floor(Math.random() * 7) + 1) * (Math.random() > 0.5 ? 1 : -1);
+        set.add(Math.max(1, answer + offset));
+      }
+
+      const options = Array.from(set);
+      for (let i = options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [options[i], options[j]] = [options[j], options[i]];
+      }
+
+      currentQuestion = {
+        questionNum: roundQuestionsHistory.length + 1,
+        factorA: a,
+        factorB: b,
+        answer,
+        options,
+        p1Answered: null, // { choice, correct: bool }
+        p2Answered: null
+      };
+
+      roundQuestionsHistory.push(currentQuestion);
+
+      document.getElementById('mathQuestion').innerText = `${a} × ${b} = ?`;
+      spawnAnswerBubbles();
+    }
+
+    function spawnAnswerBubbles() {
+      bubbles = [];
+      const safeMarginX = Math.min(220, canvas.width * 0.2);
+      const minX = safeMarginX;
+      const maxX = canvas.width - safeMarginX;
+      const minY = 140;
+      const maxY = canvas.height - 180;
+      const coords = [];
+
+      for (let i = 0; i < currentQuestion.options.length; i++) {
+        const val = currentQuestion.options[i];
+        const isCorr = val === currentQuestion.answer;
+        let bestX = 0, bestY = 0;
+        let attempts = 0, valid = false;
+
+        while (!valid && attempts < 100) {
+          attempts++;
+          bestX = Math.random() * (maxX - minX) + minX;
+          bestY = Math.random() * (maxY - minY) + minY;
+          valid = true;
+          for (let c of coords) {
+            if (Math.hypot(bestX - c.x, bestY - c.y) < CONFIG.bubbleRadius * 2.8) {
+              valid = false;
+              break;
+            }
+          }
+        }
+        coords.push({ x: bestX, y: bestY });
+        bubbles.push(new HologramBubble(val, isCorr, bestX, bestY));
+      }
+    }
+
+    // --- MULTITOUCH JOYSTICK SYSTEM ---
+    let touchTrackP1 = null;
+    let touchTrackP2 = null;
+
+    const joyZoneP1 = document.getElementById('joystickZoneP1');
+    const joyStickP1 = document.getElementById('joyStickP1');
+    const joyBaseP1 = document.getElementById('joyBaseP1');
+
+    const joyZoneP2 = document.getElementById('joystickZoneP2');
+    const joyStickP2 = document.getElementById('joyStickP2');
+    const joyBaseP2 = document.getElementById('joyBaseP2');
+
+    let maxJoyRadius = 45;
+
+    function applyJoystickSizing() {
+      if (CONFIG.joySize === 'sm') {
+        maxJoyRadius = 35;
+        joyBaseP1.style.width = '100px'; joyBaseP1.style.height = '100px';
+        joyBaseP2.style.width = '100px'; joyBaseP2.style.height = '100px';
+        joyStickP1.style.width = '42px'; joyStickP1.style.height = '42px';
+        joyStickP2.style.width = '42px'; joyStickP2.style.height = '42px';
+      } else if (CONFIG.joySize === 'lg') {
+        maxJoyRadius = 55;
+        joyBaseP1.style.width = '150px'; joyBaseP1.style.height = '150px';
+        joyBaseP2.style.width = '150px'; joyBaseP2.style.height = '150px';
+        joyStickP1.style.width = '64px'; joyStickP1.style.height = '64px';
+        joyStickP2.style.width = '64px'; joyStickP2.style.height = '64px';
+      } else {
+        maxJoyRadius = 45;
+        joyBaseP1.style.width = '128px'; joyBaseP1.style.height = '128px';
+        joyBaseP2.style.width = '128px'; joyBaseP2.style.height = '128px';
+        joyStickP1.style.width = '56px'; joyStickP1.style.height = '56px';
+        joyStickP2.style.width = '56px'; joyStickP2.style.height = '56px';
+      }
+    }
+
+    function handleTouchStart(e) {
+      sound.init();
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        const screenMid = window.innerWidth / 2;
+
+        if (touch.clientX < screenMid && touchTrackP1 === null) {
+          const rect = joyZoneP1.getBoundingClientRect();
+          touchTrackP1 = { id: touch.identifier, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
+          joyStickP1.style.transform = `translate(0px, 0px)`;
+        } else if (touch.clientX >= screenMid && touchTrackP2 === null) {
+          const rect = joyZoneP2.getBoundingClientRect();
+          touchTrackP2 = { id: touch.identifier, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
+          joyStickP2.style.transform = `translate(0px, 0px)`;
+        }
+      }
+    }
+
+    function handleTouchMove(e) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touchTrackP1 && touch.identifier === touchTrackP1.id) {
+          const dx = touch.clientX - touchTrackP1.originX;
+          const dy = touch.clientY - touchTrackP1.originY;
+          const dist = Math.hypot(dx, dy);
+          const clamped = Math.min(dist, maxJoyRadius);
+          const angle = Math.atan2(dy, dx);
+          joyStickP1.style.transform = `translate(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px)`;
+          if (wormP1 && dist > 5) wormP1.inputVector = { x: Math.cos(angle), y: Math.sin(angle) };
+        } else if (touchTrackP2 && touch.identifier === touchTrackP2.id) {
+          const dx = touch.clientX - touchTrackP2.originX;
+          const dy = touch.clientY - touchTrackP2.originY;
+          const dist = Math.hypot(dx, dy);
+          const clamped = Math.min(dist, maxJoyRadius);
+          const angle = Math.atan2(dy, dx);
+          joyStickP2.style.transform = `translate(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px)`;
+          if (wormP2 && dist > 5) wormP2.inputVector = { x: Math.cos(angle), y: Math.sin(angle) };
+        }
+      }
+    }
+
+    function handleTouchEnd(e) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const touch = e.changedTouches[i];
+        if (touchTrackP1 && touch.identifier === touchTrackP1.id) {
+          touchTrackP1 = null;
+          joyStickP1.style.transform = `translate(0px, 0px)`;
+        }
+        if (touchTrackP2 && touch.identifier === touchTrackP2.id) {
+          touchTrackP2 = null;
+          joyStickP2.style.transform = `translate(0px, 0px)`;
+        }
+      }
+    }
+
+    window.addEventListener('touchstart', handleTouchStart, { passive: false });
+    window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: false });
+    window.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+    // --- KEYBOARD DESKTOP CONTROLS ---
+    const keysPressed = {};
+    window.addEventListener('keydown', (e) => {
+      keysPressed[e.key.toLowerCase()] = true;
+      updateKeyboardVectors();
+    });
+    window.addEventListener('keyup', (e) => {
+      keysPressed[e.key.toLowerCase()] = false;
+      updateKeyboardVectors();
+    });
+
+    function updateKeyboardVectors() {
+      if (!wormP1 || !wormP2) return;
+      let p1X = 0, p1Y = 0;
+      if (keysPressed['w']) p1Y -= 1;
+      if (keysPressed['s']) p1Y += 1;
+      if (keysPressed['a']) p1X -= 1;
+      if (keysPressed['d']) p1X += 1;
+      if (p1X !== 0 || p1Y !== 0) wormP1.inputVector = { x: p1X, y: p1Y };
+
+      let p2X = 0, p2Y = 0;
+      if (keysPressed['arrowup']) p2Y -= 1;
+      if (keysPressed['arrowdown']) p2Y += 1;
+      if (keysPressed['arrowleft']) p2X -= 1;
+      if (keysPressed['arrowright']) p2X += 1;
+      if (p2X !== 0 || p2Y !== 0) wormP2.inputVector = { x: p2X, y: p2Y };
+    }
+
+    // --- COLLISION & GAME MECHANICS ---
+    function checkCollisions(worm) {
+      if (worm.hasAnsweredCurrent) return;
+
+      for (let i = 0; i < bubbles.length; i++) {
+        const b = bubbles[i];
+        if (!b.alive) continue;
+
+        const dist = Math.hypot(worm.x - b.x, worm.y - b.y);
+        if (dist < CONFIG.headRadius + b.radius) {
+          b.alive = false;
+          worm.hasAnsweredCurrent = true;
+          sound.playPop();
+
+          const isP1 = worm.id === 1;
+          const choiceRecord = { choice: b.value, correct: b.isCorrect };
+          if (isP1) currentQuestion.p1Answered = choiceRecord;
+          else currentQuestion.p2Answered = choiceRecord;
+
+          if (b.isCorrect) {
+            worm.stats.correct++;
+            worm.stats.combo++;
+            if (worm.stats.combo > worm.stats.maxCombo) worm.stats.maxCombo = worm.stats.combo;
+
+            let added = 2;
+            let text = "CORRECT! +2";
+            if (worm.stats.combo % 3 === 0) {
+              added += 2;
+              text = "STREAK BONUS! +4";
+            }
+            worm.addSegments(added);
+            sound.playCorrect();
+
+            worm.statusBadge = { text: "✓ BENAR!", color: '#4ade80', life: 1.2 };
+            floatingTexts.push(new FloatingToast(text, b.x, b.y, '#00f0ff'));
+
+            for (let p = 0; p < 25; p++) {
+              particles.push(new Particle(b.x, b.y, Math.random() > 0.5 ? '#00f0ff' : '#4ade80', 1.3));
+            }
+
+            // Target Segment Mode instant victory check!
+            if (CONFIG.gameMode === 'target' && worm.segments.length >= CONFIG.targetSegments) {
+              updateScoreHUD();
+              finishMatch();
+              return;
+            }
+          } else {
+            worm.stats.wrong++;
+            worm.stats.combo = 0;
+            worm.removeSegment();
+            sound.playWrong();
+
+            worm.statusBadge = { text: "✗ SALAH!", color: '#f43f5e', life: 1.2 };
+            floatingTexts.push(new FloatingToast("WRONG! -1", b.x, b.y, '#f43f5e'));
+
+            for (let p = 0; p < 20; p++) {
+              particles.push(new Particle(b.x, b.y, '#ff0055', 1.0));
+            }
+          }
+
+          updateScoreHUD();
+
+          if (wormP1.hasAnsweredCurrent && wormP2.hasAnsweredCurrent) {
+            setTimeout(advanceNextQuestion, 600);
+          }
+          break;
+        }
+      }
+    }
+
+    function advanceNextQuestion() {
+      if (currentState !== GameState.PLAYING) return;
+      wormP1.hasAnsweredCurrent = false;
+      wormP2.hasAnsweredCurrent = false;
+      generateQuestion();
+    }
+
+    function updateScoreHUD() {
+      if (!wormP1 || !wormP2) return;
+      document.getElementById('p1SegmentCount').innerText = wormP1.segments.length;
+      document.getElementById('p2SegmentCount').innerText = wormP2.segments.length;
+
+      const p1Badge = document.getElementById('p1ComboBadge');
+      if (wormP1.stats.combo >= 2) {
+        p1Badge.innerText = `STREAK x${wormP1.stats.combo}! 🔥`;
+        p1Badge.style.opacity = '1';
+      } else p1Badge.style.opacity = '0';
+
+      const p2Badge = document.getElementById('p2ComboBadge');
+      if (wormP2.stats.combo >= 2) {
+        p2Badge.innerText = `STREAK x${wormP2.stats.combo}! 🔥`;
+        p2Badge.style.opacity = '1';
+      } else p2Badge.style.opacity = '0';
+    }
+
+    // --- ARENA DRAWING ---
+    function drawCyberArena() {
+      const gridSpacing = 45;
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = lastChanceActive ? 'rgba(255, 0, 50, 0.15)' : 'rgba(0, 240, 255, 0.07)';
+
+      for (let x = 0; x < canvas.width; x += gridSpacing) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += gridSpacing) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      }
+
+      ambientParticles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = canvas.width;
+        if (p.x > canvas.width) p.x = 0;
+        if (p.y < 0) p.y = canvas.height;
+        if (p.y > canvas.height) p.y = 0;
+
+        ctx.fillStyle = lastChanceActive ? `rgba(255, 60, 60, ${p.alpha})` : `rgba(0, 240, 255, ${p.alpha})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      // Neon Boundary
+      ctx.save();
+      const pad = 12;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = lastChanceActive ? '#ff0044' : '#00f0ff';
+      ctx.shadowBlur = lastChanceActive ? 25 : 15;
+      ctx.shadowColor = lastChanceActive ? '#ff0000' : '#00f0ff';
+      ctx.strokeRect(pad, pad, canvas.width - pad * 2, canvas.height - pad * 2);
+
+      // Corner tech brackets
+      const cLen = 28;
+      ctx.beginPath(); ctx.moveTo(pad, pad + cLen); ctx.lineTo(pad, pad); ctx.lineTo(pad + cLen, pad); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(canvas.width - pad - cLen, pad); ctx.lineTo(canvas.width - pad, pad); ctx.lineTo(canvas.width - pad, pad + cLen); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad, canvas.height - pad - cLen); ctx.lineTo(pad, canvas.height - pad); ctx.lineTo(pad + cLen, canvas.height - pad); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(canvas.width - pad - cLen, canvas.height - pad); ctx.lineTo(canvas.width - pad, canvas.height - pad); ctx.lineTo(canvas.width - pad, canvas.height - pad - cLen); ctx.stroke();
+      ctx.restore();
+    }
+
+    // --- GAME LOOP ---
+    function gameLoop() {
+      ctx.fillStyle = '#030712';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      drawCyberArena();
+
+      if (currentState === GameState.PLAYING) {
+        wormP1.update(canvas.width, canvas.height);
+        wormP2.update(canvas.width, canvas.height);
+
+        checkCollisions(wormP1);
+        checkCollisions(wormP2);
+      }
+
+      bubbles.forEach(b => {
+        b.update();
+        b.draw(ctx);
+      });
+
+      if (wormP1) wormP1.draw(ctx);
+      if (wormP2) wormP2.draw(ctx);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw(ctx);
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const t = floatingTexts[i];
+        t.update();
+        t.draw(ctx);
+        if (t.life <= 0) floatingTexts.splice(i, 1);
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // --- ROUND INITIALIZATION ---
+    function initRound() {
+      roundQuestionsHistory = [];
+      previousQuestionsKeys = [];
+
+      applyJoystickSizing();
+
+      const skin1 = SKINS[p1Config.skinKey] || SKINS.blue;
+      const skin2 = SKINS[p2Config.skinKey] || SKINS.red;
+
+      // Update HUD Styling with chosen skins
+      document.getElementById('p1HudName').innerText = p1Config.name.toUpperCase();
+      document.getElementById('p1HudName').className = `text-xs uppercase tracking-wider font-bold truncate ${skin1.textClass}`;
+      document.getElementById('p1HudCard').style.borderColor = skin1.hex;
+      document.getElementById('p1HudAvatar').style.borderColor = skin1.hex;
+      document.getElementById('p1HudAvatar').style.boxShadow = `0 0 10px ${skin1.glow}`;
+      document.getElementById('joyBaseP1').style.borderColor = skin1.hex;
+      document.getElementById('joyStickP1').style.background = skin1.hex;
+      document.getElementById('hintP1').style.color = skin1.hex;
+
+      document.getElementById('p2HudName').innerText = p2Config.name.toUpperCase();
+      document.getElementById('p2HudName').className = `text-xs uppercase tracking-wider font-bold truncate ${skin2.textClass}`;
+      document.getElementById('p2HudCard').style.borderColor = skin2.hex;
+      document.getElementById('p2HudAvatar').style.borderColor = skin2.hex;
+      document.getElementById('p2HudAvatar').style.boxShadow = `0 0 10px ${skin2.glow}`;
+      document.getElementById('joyBaseP2').style.borderColor = skin2.hex;
+      document.getElementById('joyStickP2').style.background = skin2.hex;
+      document.getElementById('hintP2').style.color = skin2.hex;
+
+      // Setup Target progress if target mode
+      const p1Prog = document.getElementById('p1TargetProgress');
+      const p2Prog = document.getElementById('p2TargetProgress');
+      if (CONFIG.gameMode === 'target') {
+        p1Prog.innerText = `/ ${CONFIG.targetSegments}`;
+        p2Prog.innerText = `/ ${CONFIG.targetSegments}`;
+        p1Prog.classList.remove('hidden');
+        p2Prog.classList.remove('hidden');
+        document.getElementById('modeIcon').innerText = '🎯';
+        document.getElementById('timerText').innerText = `TARGET ${CONFIG.targetSegments}`;
+      } else {
+        p1Prog.classList.add('hidden');
+        p2Prog.classList.add('hidden');
+        document.getElementById('modeIcon').innerText = '⏱️';
+      }
+
+      const centerY = canvas.height / 2;
+      wormP1 = new CyberWorm(1, p1Config.name, p1Config.skinKey, canvas.width * 0.22, centerY, 0);
+      wormP2 = new CyberWorm(2, p2Config.name, p2Config.skinKey, canvas.width * 0.78, centerY, Math.PI);
+
+      particles = [];
+      floatingTexts = [];
+      updateScoreHUD();
+      generateQuestion();
+    }
+
+    // --- TIMERS & COUNTDOWN ---
+    function startCountdown() {
+      currentState = GameState.COUNTDOWN;
+      countdownVal = 3;
+      document.getElementById('countdownOverlay').classList.remove('hidden');
+      const numEl = document.getElementById('countdownNumber');
+      numEl.innerText = countdownVal;
+      sound.playCountdown(false);
+
+      const interval = setInterval(() => {
+        countdownVal--;
+        if (countdownVal > 0) {
+          numEl.innerText = countdownVal;
+          sound.playCountdown(false);
+        } else if (countdownVal === 0) {
+          numEl.innerText = "GO!";
+          sound.playCountdown(true);
+        } else {
+          clearInterval(interval);
+          document.getElementById('countdownOverlay').classList.add('hidden');
+          currentState = GameState.PLAYING;
+          if (CONFIG.gameMode === 'time') {
+            startMatchTimer();
+          }
+        }
+      }, 900);
+    }
+
+    function startMatchTimer() {
+      matchTimeRemaining = CONFIG.matchDurationSec;
+      lastChanceActive = false;
+      document.getElementById('lastChanceBanner').style.opacity = '0';
+      updateTimerDisplay();
+
+      if (matchTimerInterval) clearInterval(matchTimerInterval);
+      matchTimerInterval = setInterval(() => {
+        if (currentState !== GameState.PLAYING) return;
+        matchTimeRemaining--;
+        updateTimerDisplay();
+
+        if (matchTimeRemaining === 10) {
+          lastChanceActive = true;
+          sound.playLastChanceAlert();
+          document.getElementById('lastChanceBanner').style.opacity = '1';
+          document.getElementById('timerBadge').classList.add('border-rose-500', 'text-rose-400');
+        }
+
+        if (matchTimeRemaining <= 0) {
+          clearInterval(matchTimerInterval);
+          finishMatch();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      if (CONFIG.gameMode !== 'time') return;
+      const mins = Math.floor(matchTimeRemaining / 60);
+      const secs = matchTimeRemaining % 60;
+      document.getElementById('timerText').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // --- FINISH & VICTORY LOGIC ---
+    function finishMatch() {
+      currentState = GameState.FINISHED;
+      lastChanceActive = false;
+      if (matchTimerInterval) clearInterval(matchTimerInterval);
+      document.getElementById('lastChanceBanner').style.opacity = '0';
+      document.getElementById('timerBadge').classList.remove('border-rose-500', 'text-rose-400');
+
+      sound.playVictory();
+
+      const p1Len = wormP1.segments.length;
+      const p2Len = wormP2.segments.length;
+      let winner = 0;
+      let reason = "";
+
+      if (CONFIG.gameMode === 'target') {
+        if (p1Len >= CONFIG.targetSegments && p2Len < CONFIG.targetSegments) {
+          winner = 1;
+          reason = `${p1Config.name} pertama kali mencapai target ${CONFIG.targetSegments} segmen!`;
+        } else if (p2Len >= CONFIG.targetSegments && p1Len < CONFIG.targetSegments) {
+          winner = 2;
+          reason = `${p2Config.name} pertama kali mencapai target ${CONFIG.targetSegments} segmen!`;
+        }
+      }
+
+      if (winner === 0) {
+        if (p1Len > p2Len) {
+          winner = 1;
+          reason = `${p1Config.name} unggul dengan total ${p1Len} segmen!`;
+        } else if (p2Len > p1Len) {
+          winner = 2;
+          reason = `${p2Config.name} unggul dengan total ${p2Len} segmen!`;
+        } else {
+          if (wormP1.stats.correct > wormP2.stats.correct) {
+            winner = 1;
+            reason = `Segmen seri, ${p1Config.name} menang melalui jumlah jawaban benar (${wormP1.stats.correct} vs ${wormP2.stats.correct})!`;
+          } else if (wormP2.stats.correct > wormP1.stats.correct) {
+            winner = 2;
+            reason = `Segmen seri, ${p2Config.name} menang melalui jumlah jawaban benar (${wormP2.stats.correct} vs ${wormP1.stats.correct})!`;
+          } else {
+            if (wormP1.stats.wrong < wormP2.stats.wrong) {
+              winner = 1;
+              reason = `Seri, ${p1Config.name} lebih unggul dengan kesalahan lebih sedikit!`;
+            } else if (wormP2.stats.wrong < wormP1.stats.wrong) {
+              winner = 2;
+              reason = `Seri, ${p2Config.name} lebih unggul dengan kesalahan lebih sedikit!`;
+            } else {
+              winner = 0;
+              reason = `Pertarungan seimbang sempurna! Keduanya pantas menjadi juara.`;
+            }
+          }
+        }
+      }
+
+      const winnerBadge = document.getElementById('winnerTextBadge');
+      const winnerReasonEl = document.getElementById('winnerReason');
+      const skin1 = SKINS[p1Config.skinKey];
+      const skin2 = SKINS[p2Config.skinKey];
+
+      document.getElementById('statP1Name').innerText = p1Config.name.toUpperCase();
+      document.getElementById('statP2Name').innerText = p2Config.name.toUpperCase();
+      document.getElementById('victoryCardP1').style.borderColor = skin1.hex;
+      document.getElementById('victoryCardP2').style.borderColor = skin2.hex;
+
+      if (winner === 1) {
+        winnerBadge.innerText = `${p1Config.name.toUpperCase()} WINS!`;
+        winnerBadge.style.color = skin1.hex;
+        document.getElementById('statP1Result').innerText = "WINNER 🏆";
+        document.getElementById('statP1Result').className = "text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
+        document.getElementById('statP2Result').innerText = "RUNNER UP";
+        document.getElementById('statP2Result').className = "text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400";
+      } else if (winner === 2) {
+        winnerBadge.innerText = `${p2Config.name.toUpperCase()} WINS!`;
+        winnerBadge.style.color = skin2.hex;
+        document.getElementById('statP2Result').innerText = "WINNER 🏆";
+        document.getElementById('statP2Result').className = "text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
+        document.getElementById('statP1Result').innerText = "RUNNER UP";
+        document.getElementById('statP1Result').className = "text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400";
+      } else {
+        winnerBadge.innerText = "IT'S A DRAW! (SERI)";
+        winnerBadge.style.color = "#ffd700";
+        document.getElementById('statP1Result').innerText = "TIED";
+        document.getElementById('statP2Result').innerText = "TIED";
+      }
+
+      winnerReasonEl.innerText = reason;
+
+      document.getElementById('statP1Length').innerText = `${p1Len} segs`;
+      document.getElementById('statP1Correct').innerText = wormP1.stats.correct;
+      document.getElementById('statP1Wrong').innerText = wormP1.stats.wrong;
+      const p1Tot = wormP1.stats.correct + wormP1.stats.wrong;
+      document.getElementById('statP1Accuracy').innerText = `${p1Tot > 0 ? Math.round((wormP1.stats.correct / p1Tot) * 100) : 100}%`;
+      document.getElementById('statP1Combo').innerText = `${wormP1.stats.maxCombo}x`;
+
+      document.getElementById('statP2Length').innerText = `${p2Len} segs`;
+      document.getElementById('statP2Correct').innerText = wormP2.stats.correct;
+      document.getElementById('statP2Wrong').innerText = wormP2.stats.wrong;
+      const p2Tot = wormP2.stats.correct + wormP2.stats.wrong;
+      document.getElementById('statP2Accuracy').innerText = `${p2Tot > 0 ? Math.round((wormP2.stats.correct / p2Tot) * 100) : 100}%`;
+      document.getElementById('statP2Combo').innerText = `${wormP2.stats.maxCombo}x`;
+
+      for (let i = 0; i < 40; i++) {
+        particles.push(new Particle(canvas.width / 2, canvas.height / 2, Math.random() > 0.5 ? skin1.hex : skin2.hex, 2.5));
+      }
+
+      document.getElementById('victoryModal').classList.remove('hidden');
+    }
+
+    // --- EDUCATIONAL REVIEW LOG DRAWER ---
+    function buildReviewDrawer() {
+      const container = document.getElementById('reviewList');
+      container.innerHTML = '';
+
+      if (roundQuestionsHistory.length === 0) {
+        container.innerHTML = `<div class="text-slate-400 text-center py-4">Belum ada riwayat soal pada ronde ini.</div>`;
+        return;
+      }
+
+      roundQuestionsHistory.forEach((q, idx) => {
+        const item = document.createElement('div');
+        item.className = 'p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex flex-col gap-1.5';
+
+        const p1Status = q.p1Answered 
+          ? (q.p1Answered.correct ? `<span class="text-emerald-400 font-bold">✓ Benar (${q.p1Answered.choice})</span>` : `<span class="text-rose-400 font-bold">✗ Salah (${q.p1Answered.choice})</span>`)
+          : `<span class="text-slate-500 font-mono">-</span>`;
+
+        const p2Status = q.p2Answered 
+          ? (q.p2Answered.correct ? `<span class="text-emerald-400 font-bold">✓ Benar (${q.p2Answered.choice})</span>` : `<span class="text-rose-400 font-bold">✗ Salah (${q.p2Answered.choice})</span>`)
+          : `<span class="text-slate-500 font-mono">-</span>`;
+
+        item.innerHTML = `
+          <div class="flex items-center justify-between font-orbitron font-bold">
+            <span class="text-cyan-300">#${idx + 1}. ${q.factorA} × ${q.factorB}</span>
+            <span class="text-yellow-300 bg-yellow-950/60 px-2 py-0.5 rounded border border-yellow-500/40 font-mono">Jawaban: ${q.answer}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-slate-800/80">
+            <div><span class="text-slate-400">${p1Config.name}:</span> ${p1Status}</div>
+            <div><span class="text-slate-400">${p2Config.name}:</span> ${p2Status}</div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // --- LIVE 3D PREVIEW CANVASES FOR WORM SELECTION ---
+    function renderPreviewWorm(canvasId, skinKey) {
+      const pCanvas = document.getElementById(canvasId);
+      if (!pCanvas) return;
+      const pCtx = pCanvas.getContext('2d');
+      const w = pCanvas.width;
+      const h = pCanvas.height;
+
+      pCtx.clearRect(0, 0, w, h);
+      const skin = SKINS[skinKey] || SKINS.blue;
+
+      const segments = 5;
+      const segRadius = 14;
+      const headRadius = 18;
+      const startX = w - 60;
+      const centerY = h / 2;
+
+      // Draw Segments
+      for (let i = segments - 1; i >= 0; i--) {
+        const segX = startX - i * 20;
+        const segY = centerY + Math.sin(i * 0.9) * 8;
+        const radius = segRadius * (1 - (i / segments) * 0.35);
+
+        const grad = pCtx.createRadialGradient(segX - 4, segY - 4, 2, segX, segY, radius);
+        grad.addColorStop(0, skin.tailColors[0]);
+        grad.addColorStop(0.35, skin.tailColors[1]);
+        grad.addColorStop(0.75, skin.tailColors[2]);
+        grad.addColorStop(1, skin.tailColors[3]);
+
+        pCtx.beginPath();
+        pCtx.arc(segX, segY, radius, 0, Math.PI * 2);
+        pCtx.fillStyle = grad;
+        pCtx.fill();
+        pCtx.lineWidth = 1.2;
+        pCtx.strokeStyle = skin.hex;
+        pCtx.stroke();
+      }
+
+      // Draw Head
+      const hX = startX + 5;
+      const hY = centerY;
+      const headGrad = pCtx.createRadialGradient(hX - 5, hY - 5, 2, hX, hY, headRadius);
+      headGrad.addColorStop(0, skin.headColors[0]);
+      headGrad.addColorStop(0.35, skin.headColors[1]);
+      headGrad.addColorStop(0.8, skin.headColors[2]);
+      headGrad.addColorStop(1, skin.headColors[3]);
+
+      pCtx.beginPath();
+      pCtx.arc(hX, hY, headRadius, 0, Math.PI * 2);
+      pCtx.fillStyle = headGrad;
+      pCtx.fill();
+      pCtx.lineWidth = 2;
+      pCtx.strokeStyle = '#ffffff';
+      pCtx.stroke();
+
+      // Eye
+      pCtx.beginPath();
+      pCtx.arc(hX + 6, hY - 4, 5, 0, Math.PI * 2);
+      pCtx.fillStyle = '#ffffff';
+      pCtx.fill();
+      pCtx.beginPath();
+      pCtx.arc(hX + 8, hY - 4, 2.5, 0, Math.PI * 2);
+      pCtx.fillStyle = '#050b14';
+      pCtx.fill();
+    }
+
+    function buildColorPalettes() {
+      const paletteP1 = document.getElementById('paletteP1');
+      const paletteP2 = document.getElementById('paletteP2');
+
+      paletteP1.innerHTML = '';
+      paletteP2.innerHTML = '';
+
+      Object.keys(SKINS).forEach(key => {
+        const s = SKINS[key];
+
+        // P1 Color Pill
+        const btn1 = document.createElement('button');
+        btn1.className = `w-7 h-7 rounded-full border-2 transition transform hover:scale-110 flex items-center justify-center ${p1Config.skinKey === key ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`;
+        btn1.style.backgroundColor = s.hex;
+        btn1.addEventListener('click', () => {
+          p1Config.skinKey = key;
+          buildColorPalettes();
+          renderPreviewWorm('previewCanvasP1', p1Config.skinKey);
+        });
+        paletteP1.appendChild(btn1);
+
+        // P2 Color Pill
+        const btn2 = document.createElement('button');
+        btn2.className = `w-7 h-7 rounded-full border-2 transition transform hover:scale-110 flex items-center justify-center ${p2Config.skinKey === key ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`;
+        btn2.style.backgroundColor = s.hex;
+        btn2.addEventListener('click', () => {
+          p2Config.skinKey = key;
+          buildColorPalettes();
+          renderPreviewWorm('previewCanvasP2', p2Config.skinKey);
+        });
+        paletteP2.appendChild(btn2);
+      });
+    }
+
+    // --- UI EVENT BINDINGS ---
+    document.getElementById('btnStartGame').addEventListener('click', () => {
+      sound.init();
+      p1Config.name = document.getElementById('inputP1Name').value.trim() || "Player 1";
+      p2Config.name = document.getElementById('inputP2Name').value.trim() || "Player 2";
+      CONFIG.wormSpeed = parseFloat(document.getElementById('selectWormSpeed').value) || 3.8;
+      CONFIG.joySize = document.getElementById('selectJoySize').value || 'md';
+
+      document.getElementById('menuScreen').classList.add('hidden');
+      initRound();
+      startCountdown();
+    });
+
+    // Preset Curriculum Buttons
+    document.querySelectorAll('.preset-rule-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.currentTarget;
+        CONFIG.presetMode = target.getAttribute('data-type');
+        document.querySelectorAll('.preset-rule-btn').forEach(b => {
+          b.classList.remove('border-cyan-500/60', 'bg-cyan-500/20', 'text-white');
+          b.classList.add('border-cyan-500/30', 'bg-cyan-950/30', 'text-slate-300');
+        });
+        target.classList.remove('border-cyan-500/30', 'bg-cyan-950/30', 'text-slate-300');
+        target.classList.add('border-cyan-500/60', 'bg-cyan-500/20', 'text-white');
+      });
+    });
+
+    // Game Mode Toggle
+    document.getElementById('btnModeTime').addEventListener('click', () => {
+      CONFIG.gameMode = 'time';
+      document.getElementById('btnModeTime').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1.5';
+      document.getElementById('btnModeTarget').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1.5';
+      document.getElementById('timeAttackContainer').classList.remove('hidden');
+      document.getElementById('targetSegmentContainer').classList.add('hidden');
+    });
+
+    document.getElementById('btnModeTarget').addEventListener('click', () => {
+      CONFIG.gameMode = 'target';
+      document.getElementById('btnModeTarget').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1.5';
+      document.getElementById('btnModeTime').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1.5';
+      document.getElementById('targetSegmentContainer').classList.remove('hidden');
+      document.getElementById('timeAttackContainer').classList.add('hidden');
+    });
+
+    // Timer Duration Buttons
+    document.querySelectorAll('.time-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        CONFIG.matchDurationSec = parseInt(e.target.getAttribute('data-sec'), 10);
+        document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('border-cyan-500/60', 'bg-cyan-500/20', 'text-cyan-200', 'font-bold'));
+        e.target.classList.add('border-cyan-500/60', 'bg-cyan-500/20', 'text-cyan-200', 'font-bold');
+      });
+    });
+
+    // Target Segment Buttons
+    document.querySelectorAll('.target-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        CONFIG.targetSegments = parseInt(e.target.getAttribute('data-target'), 10);
+        document.querySelectorAll('.target-btn').forEach(b => b.classList.remove('border-yellow-500/60', 'bg-yellow-500/20', 'text-yellow-200', 'font-bold'));
+        e.target.classList.add('border-yellow-500/60', 'bg-yellow-500/20', 'text-yellow-200', 'font-bold');
+      });
+    });
+
+    // In-game Pause & Controls
+    document.getElementById('btnPauseGame').addEventListener('click', () => {
+      if (currentState === GameState.PLAYING) {
+        currentState = GameState.PAUSED;
+        document.getElementById('pauseModal').classList.remove('hidden');
+      }
+    });
+    document.getElementById('btnResumeGame').addEventListener('click', () => {
+      currentState = GameState.PLAYING;
+      document.getElementById('pauseModal').classList.add('hidden');
+    });
+    document.getElementById('btnRestartRound').addEventListener('click', () => {
+      document.getElementById('pauseModal').classList.add('hidden');
+      initRound();
+      startCountdown();
+    });
+    document.getElementById('btnQuitToMenu').addEventListener('click', () => {
+      document.getElementById('pauseModal').classList.add('hidden');
+      document.getElementById('menuScreen').classList.remove('hidden');
+      currentState = GameState.MENU;
+    });
+
+    // Sound & Fullscreen Top Bar Buttons
+    document.getElementById('btnToggleAudio').addEventListener('click', (e) => {
+      sound.enabled = !sound.enabled;
+      e.currentTarget.innerText = sound.enabled ? '🔊' : '🔇';
+    });
+    document.getElementById('btnToggleFullscreen').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    // How to Play Modal
+    document.getElementById('btnOpenHowTo').addEventListener('click', () => document.getElementById('howToModal').classList.remove('hidden'));
+    document.getElementById('btnCloseHowTo').addEventListener('click', () => document.getElementById('howToModal').classList.add('hidden'));
+    document.getElementById('btnGotIt').addEventListener('click', () => document.getElementById('howToModal').classList.add('hidden'));
+
+    // Victory Screen Buttons
+    document.getElementById('btnRematch').addEventListener('click', () => {
+      document.getElementById('victoryModal').classList.add('hidden');
+      initRound();
+      startCountdown();
+    });
+    document.getElementById('btnBackToMenu').addEventListener('click', () => {
+      document.getElementById('victoryModal').classList.add('hidden');
+      document.getElementById('menuScreen').classList.remove('hidden');
+      currentState = GameState.MENU;
+    });
+
+    // Review Modal Buttons
+    document.getElementById('btnOpenReview').addEventListener('click', () => {
+      buildReviewDrawer();
+      document.getElementById('reviewModal').classList.remove('hidden');
+    });
+    document.getElementById('btnCloseReview').addEventListener('click', () => document.getElementById('reviewModal').classList.add('hidden'));
+    document.getElementById('btnDismissReview').addEventListener('click', () => document.getElementById('reviewModal').classList.add('hidden'));
+
+    // Custom Mult inputs binding
+    document.getElementById('settingMinMult').addEventListener('change', (e) => {
+      CONFIG.multMin = parseInt(e.target.value, 10) || 1;
+      CONFIG.presetMode = 'custom';
+    });
+    document.getElementById('settingMaxMult').addEventListener('change', (e) => {
+      CONFIG.multMax = parseInt(e.target.value, 10) || 10;
+      CONFIG.presetMode = 'custom';
+    });
+
+    // --- WINDOW LOAD INITIALIZATION ---
+    window.onload = function() {
+      resizeCanvas();
+      buildColorPalettes();
+      renderPreviewWorm('previewCanvasP1', p1Config.skinKey);
+      renderPreviewWorm('previewCanvasP2', p2Config.skinKey);
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
