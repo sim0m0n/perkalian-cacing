@@ -83,7 +83,12 @@
         <div id="mathQuestion" class="font-orbitron font-black text-2xl sm:text-4xl tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]">
           7 × 8 = ?
         </div>
-        <div id="questionPrompt" class="text-[9px] sm:text-[10px] text-cyan-300 font-semibold tracking-wide">TABRAK GELEMBUNG BENAR!</div>
+        <div id="questionPrompt" class="text-[9px] sm:text-[10px] text-cyan-300 font-semibold tracking-wide">TABRAK GELEMBUNG BENAR! (2 JAWABAN BENAR)</div>
+      </div>
+
+      <!-- Grace Period Countdown Bar (Hidden by default) -->
+      <div id="gracePeriodBanner" class="mt-1 px-4 py-0.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 font-orbitron font-bold text-xs tracking-wider hidden animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+        ⚡ WAKTU LAWAN: <span id="graceSecondsText">2.0</span>s ⚡
       </div>
 
       <!-- Match Info Pill & Top Controls -->
@@ -129,7 +134,6 @@
   </div>
 
   <!-- VIRTUAL JOYSTICK OVERLAYS -->
-  <!-- Player 1 Joystick Area (Bottom Left) -->
   <div id="joystickZoneP1" class="absolute bottom-4 left-4 w-44 h-44 sm:w-52 sm:h-52 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
     <div id="joyBaseP1" class="w-32 h-32 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
       <div id="joyStickP1" class="w-14 h-14 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
@@ -139,7 +143,6 @@
     <span id="hintP1" class="absolute bottom-1 text-[10px] font-bold uppercase tracking-widest pointer-events-none opacity-80">WASD / TOUCH</span>
   </div>
 
-  <!-- Player 2 Joystick Area (Bottom Right) -->
   <div id="joystickZoneP2" class="absolute bottom-4 right-4 w-44 h-44 sm:w-52 sm:h-52 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
     <div id="joyBaseP2" class="w-32 h-32 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
       <div id="joyStickP2" class="w-14 h-14 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
@@ -149,11 +152,9 @@
     <span id="hintP2" class="absolute bottom-1 text-[10px] font-bold uppercase tracking-widest pointer-events-none opacity-80">ARROWS / TOUCH</span>
   </div>
 
-  <!-- ==================== MAIN SCREEN WITH INTEGRATED SETTINGS & COLOR CUSTOMIZATION ==================== -->
+  <!-- MAIN SCREEN -->
   <div id="menuScreen" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-3 sm:px-6 py-4 overflow-y-auto custom-scrollbar">
     <div class="glass-panel max-w-4xl w-full rounded-3xl p-5 sm:p-7 border border-cyan-500/30 shadow-[0_0_50px_rgba(0,240,255,0.18)] relative my-auto">
-      
-      <!-- Header Title -->
       <div class="text-center mb-5">
         <div class="inline-block px-3 py-0.5 rounded-full bg-cyan-900/40 border border-cyan-400/30 text-cyan-300 font-orbitron text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-1">
           Futuristic 2-Player Multiplication Arcade
@@ -166,9 +167,8 @@
         </p>
       </div>
 
-      <!-- Integrated 2-Player Character Customization & 3D Preview Cards -->
+      <!-- Character Setup -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-        <!-- PLAYER 1 CUSTOMIZATION CARD -->
         <div id="cardP1Config" class="p-4 rounded-2xl bg-slate-900/70 border border-cyan-500/40 flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -177,29 +177,20 @@
             </div>
             <span class="text-[10px] text-slate-400 font-mono">[W, A, S, D]</span>
           </div>
-
-          <!-- Name Input -->
           <div>
             <label class="block text-[11px] text-slate-300 font-bold mb-1">Nama Pemain 1:</label>
             <input id="inputP1Name" type="text" value="Cyber Blue" maxlength="12" class="w-full px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-700 text-white font-orbitron text-xs focus:border-cyan-400 outline-none">
           </div>
-
-          <!-- Live 3D Worm Preview Canvas -->
           <div class="h-20 w-full rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center relative overflow-hidden">
             <canvas id="previewCanvasP1" width="340" height="80" class="w-full h-full"></canvas>
             <span class="absolute bottom-1 right-2 text-[9px] text-slate-500 font-mono">Live 3D Preview</span>
           </div>
-
-          <!-- Color Skin Selection Palette -->
           <div>
             <label class="block text-[10px] text-slate-300 font-bold mb-1.5 uppercase">Pilih Skin Neon P1:</label>
-            <div id="paletteP1" class="flex items-center gap-2 flex-wrap">
-              <!-- Rendered via JS -->
-            </div>
+            <div id="paletteP1" class="flex items-center gap-2 flex-wrap"></div>
           </div>
         </div>
 
-        <!-- PLAYER 2 CUSTOMIZATION CARD -->
         <div id="cardP2Config" class="p-4 rounded-2xl bg-slate-900/70 border border-rose-500/40 flex flex-col gap-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -208,33 +199,23 @@
             </div>
             <span class="text-[10px] text-slate-400 font-mono">[Panah Arah]</span>
           </div>
-
-          <!-- Name Input -->
           <div>
             <label class="block text-[11px] text-slate-300 font-bold mb-1">Nama Pemain 2:</label>
             <input id="inputP2Name" type="text" value="Neon Red" maxlength="12" class="w-full px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-700 text-white font-orbitron text-xs focus:border-rose-400 outline-none">
           </div>
-
-          <!-- Live 3D Worm Preview Canvas -->
           <div class="h-20 w-full rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center relative overflow-hidden">
             <canvas id="previewCanvasP2" width="340" height="80" class="w-full h-full"></canvas>
             <span class="absolute bottom-1 right-2 text-[9px] text-slate-500 font-mono">Live 3D Preview</span>
           </div>
-
-          <!-- Color Skin Selection Palette -->
           <div>
             <label class="block text-[10px] text-slate-300 font-bold mb-1.5 uppercase">Pilih Skin Neon P2:</label>
-            <div id="paletteP2" class="flex items-center gap-2 flex-wrap">
-              <!-- Rendered via JS -->
-            </div>
+            <div id="paletteP2" class="flex items-center gap-2 flex-wrap"></div>
           </div>
         </div>
       </div>
 
-      <!-- MAIN CONFIGURATION: PRESETS, MODE, SPEED, JOYSTICK -->
+      <!-- Config Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs">
-        
-        <!-- Left Column: Math Curriculum Presets -->
         <div>
           <label class="block font-orbitron text-xs text-cyan-300 font-bold uppercase mb-2">
             📚 Materi Perkalian Dasar SD:
@@ -257,7 +238,6 @@
               <span class="text-[10px] text-slate-300">Tabel 1 – 10 Acak</span>
             </button>
           </div>
-          <!-- Custom Range Option -->
           <div class="flex items-center gap-2 pt-1 text-slate-300">
             <span class="text-[11px] font-semibold">Custom Rentang:</span>
             <input id="settingMinMult" type="number" min="1" max="10" value="1" class="w-12 px-1.5 py-0.5 bg-slate-950 border border-slate-700 rounded text-center text-cyan-300 font-bold text-xs">
@@ -266,13 +246,10 @@
           </div>
         </div>
 
-        <!-- Right Column: Game Mode & Control Ergonomics -->
         <div>
           <label class="block font-orbitron text-xs text-yellow-300 font-bold uppercase mb-2">
             🏆 Mode Game & Pengaturan:
           </label>
-
-          <!-- Game Mode Selector -->
           <div class="grid grid-cols-2 gap-2 mb-2.5">
             <button id="btnModeTime" class="mode-select-btn py-1.5 px-3 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1.5">
               <span>⏱️</span> Time Attack
@@ -282,7 +259,6 @@
             </button>
           </div>
 
-          <!-- Time Attack Options -->
           <div id="timeAttackContainer" class="flex items-center gap-1.5 flex-wrap mb-2.5">
             <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-950/40 text-[11px] text-slate-200" data-sec="30">30s</button>
             <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/60 bg-cyan-500/20 text-[11px] text-cyan-200 font-bold" data-sec="60">1 Menit</button>
@@ -290,7 +266,6 @@
             <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-950/40 text-[11px] text-slate-200" data-sec="180">3 Menit</button>
           </div>
 
-          <!-- Target Segment Options (Hidden if Time Attack) -->
           <div id="targetSegmentContainer" class="hidden items-center gap-1.5 flex-wrap mb-2.5">
             <span class="text-[11px] text-slate-300">Target Menang:</span>
             <button class="target-btn px-2.5 py-1 rounded-md border border-yellow-500/30 bg-yellow-950/40 text-[11px] text-slate-200" data-target="20">20 Segmen</button>
@@ -298,7 +273,6 @@
             <button class="target-btn px-2.5 py-1 rounded-md border border-yellow-500/30 bg-yellow-950/40 text-[11px] text-slate-200" data-target="30">30 Segmen</button>
           </div>
 
-          <!-- Speed & Joystick Size Dropdowns -->
           <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
             <div>
               <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Kecepatan Ular:</label>
@@ -320,7 +294,7 @@
         </div>
       </div>
 
-      <!-- Action Buttons Row -->
+      <!-- Start Button -->
       <div class="flex flex-col sm:flex-row items-center gap-3">
         <button id="btnStartGame" class="w-full sm:flex-1 py-4 rounded-2xl font-orbitron font-black text-lg sm:text-xl tracking-wider text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-400 hover:brightness-110 active:scale-98 transition shadow-[0_0_25px_rgba(0,240,255,0.6)]">
           ⚡ MULAI PERTANDINGAN ⚡
@@ -342,10 +316,10 @@
       </div>
       <div class="space-y-3 text-xs leading-relaxed text-slate-300">
         <p>🎮 <strong class="text-white">Dua Pemain:</strong> Player 1 di kiri, Player 2 di kanan layar bersamaan dengan multitouch joystick atau keyboard.</p>
-        <p>🎯 <strong class="text-white">Soal Perkalian:</strong> Perhatikan soal di bagian atas arena (contoh: 7 × 8 = ?).</p>
-        <p>✨ <strong class="text-emerald-400">Jawaban Benar:</strong> Tabrak gelembung jawaban yang benar! Tubuh ular bertambah +2 segmen. Jika benar 3 kali berturut-turut (streak), dapatkan bonus ekstra +2 segmen!</p>
+        <p>🎯 <strong class="text-white">Aturan Gelembung Baru:</strong> Ada <b>2 gelembung jawaban benar</b> dan <b>3 gelembung salah</b>!</p>
+        <p>⏱️ <strong class="text-amber-400">Jeda 2 Detik:</strong> Saat salah satu pemain berhasil menjawab benar, lawan memiliki waktu 2 detik untuk mengambil gelembung benar kedua sebelum soal otomatis diganti.</p>
+        <p>✨ <strong class="text-emerald-400">Jawaban Benar:</strong> Tubuh ular bertambah +2 segmen. Streak 3x berturut-turut memberikan bonus ekstra +2 segmen!</p>
         <p>💥 <strong class="text-rose-400">Jawaban Salah:</strong> Tubuh ular berkurang 1 segmen (panjang minimal 3).</p>
-        <p>🏆 <strong class="text-yellow-300">Kemenangan:</strong> Ditentukan dari panjang ular terbanyak saat waktu habis atau yang pertama kali mencapai target segmen!</p>
       </div>
       <button id="btnGotIt" class="mt-5 w-full py-3 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30">
         MENGERTI, SIAP TANDING!
@@ -372,7 +346,7 @@
     </div>
   </div>
 
-  <!-- COUNTDOWN OVERLAY (3, 2, 1, GO!) -->
+  <!-- COUNTDOWN OVERLAY -->
   <div id="countdownOverlay" class="absolute inset-0 z-20 pointer-events-none hidden flex items-center justify-center">
     <div id="countdownNumber" class="font-orbitron font-black text-8xl sm:text-9xl text-cyan-300 drop-shadow-[0_0_35px_#00f0ff] animate-pulse">
       3
@@ -390,9 +364,7 @@
       </div>
       <p id="winnerReason" class="text-xs text-slate-300 mb-5 font-semibold">Tumbuh menjadi cacing digital terpanjang!</p>
 
-      <!-- Comparison Stats Cards -->
       <div class="grid grid-cols-2 gap-3 mb-5 text-left">
-        <!-- P1 Summary -->
         <div id="victoryCardP1" class="p-3.5 rounded-2xl bg-slate-900/80 border">
           <div class="font-orbitron font-bold text-xs mb-2 flex items-center justify-between">
             <span id="statP1Name" class="truncate">PLAYER 1</span>
@@ -407,7 +379,6 @@
           </div>
         </div>
 
-        <!-- P2 Summary -->
         <div id="victoryCardP2" class="p-3.5 rounded-2xl bg-slate-900/80 border">
           <div class="font-orbitron font-bold text-xs mb-2 flex items-center justify-between">
             <span id="statP2Name" class="truncate">PLAYER 2</span>
@@ -423,7 +394,6 @@
         </div>
       </div>
 
-      <!-- Action Buttons with Review Feature -->
       <div class="flex flex-col gap-2">
         <button id="btnOpenReview" class="w-full py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 flex items-center justify-center gap-2">
           <span>📝</span> LIHAT RIWAYAT & PEMBAHASAN SOAL
@@ -437,11 +407,10 @@
           </button>
         </div>
       </div>
-
     </div>
   </div>
 
-  <!-- QUESTION HISTORY & EDUCATIONAL REVIEW MODAL -->
+  <!-- QUESTION HISTORY MODAL -->
   <div id="reviewModal" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4 py-6">
     <div class="glass-panel max-w-lg w-full rounded-3xl p-6 border border-cyan-500/40 text-slate-200 max-h-[85vh] flex flex-col">
       <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
@@ -451,10 +420,7 @@
         <button id="btnCloseReview" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 text-xs font-bold">✕</button>
       </div>
 
-      <!-- Scrollable Question History Table -->
-      <div id="reviewList" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar text-xs">
-        <!-- Rendered dynamically -->
-      </div>
+      <div id="reviewList" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar text-xs"></div>
 
       <button id="btnDismissReview" class="mt-4 w-full py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700">
         TUTUP PEMBAHASAN
@@ -466,10 +432,8 @@
   <script>
     /**
      * CYBER WORM: MATH BATTLE by si_momon
-     * Futuristic Elementary Multiplication Game
      */
 
-    // --- COLOR SKINS DEFINITION (3D Glossy Materials) ---
     const SKINS = {
       blue: {
         id: 'blue',
@@ -533,7 +497,6 @@
       }
     };
 
-    // --- PROCEDURAL AUDIO SYNTHESIZER ---
     class SoundEngine {
       constructor() {
         this.ctx = null;
@@ -594,12 +557,11 @@
     }
     const sound = new SoundEngine();
 
-    // --- GAME CONFIGURATION & STATE ---
     const CONFIG = {
-      presetMode: 'master', // 'k2', 'k3', 'k4', 'master', 'custom'
+      presetMode: 'master',
       multMin: 1,
       multMax: 10,
-      gameMode: 'time', // 'time' or 'target'
+      gameMode: 'time',
       matchDurationSec: 60,
       targetSegments: 25,
       initialSegments: 5,
@@ -624,16 +586,18 @@
     let lastChanceActive = false;
     let countdownVal = 3;
 
-    // Player Configuration
+    // Grace Period System: 2 Detik kesempatan bagi lawan
+    let graceTimer = null;
+    let graceTimeRemaining = 0;
+    let graceInterval = null;
+
     let p1Config = { name: "Player 1", skinKey: 'blue' };
     let p2Config = { name: "Player 2", skinKey: 'red' };
 
-    // Math Round History
     let roundQuestionsHistory = [];
     let currentQuestion = null;
     let previousQuestionsKeys = [];
 
-    // --- 3D CARTOON WORM CLASS ---
     class CyberWorm {
       constructor(id, name, skinKey, startX, startY, angle) {
         this.id = id;
@@ -693,14 +657,12 @@
         this.x += Math.cos(this.angle + squirmOffset) * this.speed;
         this.y += Math.sin(this.angle + squirmOffset) * this.speed;
 
-        // Wall collision / containment
         const pad = CONFIG.headRadius + 20;
         if (this.x < pad) { this.x = pad; this.angle = Math.PI - this.angle; }
         if (this.x > arenaWidth - pad) { this.x = arenaWidth - pad; this.angle = Math.PI - this.angle; }
         if (this.y < pad + 65) { this.y = pad + 65; this.angle = -this.angle; }
         if (this.y > arenaHeight - pad - 60) { this.y = arenaHeight - pad - 60; this.angle = -this.angle; }
 
-        // Segments kinematics
         let leaderX = this.x;
         let leaderY = this.y;
         const segmentDist = CONFIG.segmentRadius * 1.25;
@@ -735,7 +697,6 @@
         ctx.shadowBlur = 18;
         ctx.shadowColor = skin.glow;
 
-        // Draw body segments
         for (let i = this.segments.length - 1; i >= 0; i--) {
           const seg = this.segments[i];
           const taper = (1 - (i / this.segments.length) * 0.45) * seg.scale;
@@ -759,7 +720,6 @@
           ctx.stroke();
         }
 
-        // Draw Head
         const hRadius = CONFIG.headRadius;
         const headGrad = ctx.createRadialGradient(
           this.x - hRadius * 0.35, this.y - hRadius * 0.35, hRadius * 0.1,
@@ -779,7 +739,6 @@
         ctx.strokeStyle = '#ffffff';
         ctx.stroke();
 
-        // 3D Cartoon Eyes
         const eyeOffsetDist = hRadius * 0.55;
         const eyeAngleOffset = 0.55;
         const eyeRadius = 6.5;
@@ -812,7 +771,6 @@
           ctx.fill();
         });
 
-        // Visor / Forehead Hologram Node
         const antX = this.x + Math.cos(this.angle) * (hRadius * 0.9);
         const antY = this.y + Math.sin(this.angle) * (hRadius * 0.9);
         ctx.beginPath();
@@ -822,7 +780,6 @@
         ctx.shadowColor = '#ffffff';
         ctx.fill();
 
-        // Floating Status Label
         if (this.hasAnsweredCurrent) {
           ctx.font = "bold 11px Orbitron, sans-serif";
           ctx.fillStyle = '#4ade80';
@@ -839,7 +796,6 @@
       }
     }
 
-    // --- HOLOGRAPHIC ANSWER BUBBLE ---
     class HologramBubble {
       constructor(val, isCorrect, x, y) {
         this.value = val;
@@ -890,7 +846,6 @@
       }
     }
 
-    // --- PARTICLES & FLOATING TOASTS ---
     class Particle {
       constructor(x, y, color, speedScale = 1) {
         this.x = x; this.y = y; this.color = color;
@@ -935,7 +890,6 @@
       }
     }
 
-    // --- CANVAS & ARENA SETUP ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     let wormP1 = null;
@@ -962,8 +916,10 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    // --- MATHEMATICAL QUESTION ENGINE ---
+    // --- SOAL ENGINE (2 JAWABAN BENAR + 3 SALAH = 5 GELEMBUNG) ---
     function generateQuestion() {
+      clearGracePeriod();
+
       let a, b, answer, key;
       let attempts = 0;
 
@@ -995,31 +951,44 @@
       previousQuestionsKeys.push(key);
       if (previousQuestionsKeys.length > 6) previousQuestionsKeys.shift();
 
-      // Distractors
-      const set = new Set([answer]);
+      // Buat 3 distraktor unik yang bukan jawaban benar
+      const distractorsSet = new Set();
       const potential = [
         answer + a, answer - a, answer + b, answer - b,
         (a + 1) * b, (a - 1) * b,
         answer + 10, answer - 10,
         answer + (Math.random() > 0.5 ? 2 : -2),
-        answer + (Math.random() > 0.5 ? 4 : -4)
+        answer + (Math.random() > 0.5 ? 4 : -4),
+        answer + 3, answer - 3
       ];
 
       for (let cand of potential) {
-        if (cand > 0 && cand !== answer && !set.has(cand)) {
-          set.add(cand);
-          if (set.size === 4) break;
+        if (cand > 0 && cand !== answer && !distractorsSet.has(cand)) {
+          distractorsSet.add(cand);
+          if (distractorsSet.size === 3) break;
         }
       }
-      while (set.size < 4) {
-        const offset = (Math.floor(Math.random() * 7) + 1) * (Math.random() > 0.5 ? 1 : -1);
-        set.add(Math.max(1, answer + offset));
+
+      while (distractorsSet.size < 3) {
+        const offset = (Math.floor(Math.random() * 8) + 1) * (Math.random() > 0.5 ? 1 : -1);
+        const cand = answer + offset;
+        if (cand > 0 && cand !== answer) distractorsSet.add(cand);
       }
 
-      const options = Array.from(set);
-      for (let i = options.length - 1; i > 0; i--) {
+      // Daftar 5 bubble: 2 benar + 3 salah
+      const bubbleItems = [
+        { value: answer, isCorrect: true },
+        { value: answer, isCorrect: true }
+      ];
+
+      distractorsSet.forEach(val => {
+        bubbleItems.push({ value: val, isCorrect: false });
+      });
+
+      // Acak urutan posisi 5 gelembung
+      for (let i = bubbleItems.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [options[i], options[j]] = [options[j], options[i]];
+        [bubbleItems[i], bubbleItems[j]] = [bubbleItems[j], bubbleItems[i]];
       }
 
       currentQuestion = {
@@ -1027,50 +996,95 @@
         factorA: a,
         factorB: b,
         answer,
-        options,
-        p1Answered: null, // { choice, correct: bool }
+        bubbleItems,
+        p1Answered: null,
         p2Answered: null
       };
 
       roundQuestionsHistory.push(currentQuestion);
-
       document.getElementById('mathQuestion').innerText = `${a} × ${b} = ?`;
       spawnAnswerBubbles();
     }
 
     function spawnAnswerBubbles() {
       bubbles = [];
-      const safeMarginX = Math.min(220, canvas.width * 0.2);
+      const safeMarginX = Math.min(200, canvas.width * 0.18);
       const minX = safeMarginX;
       const maxX = canvas.width - safeMarginX;
-      const minY = 140;
+      const minY = 145;
       const maxY = canvas.height - 180;
       const coords = [];
 
-      for (let i = 0; i < currentQuestion.options.length; i++) {
-        const val = currentQuestion.options[i];
-        const isCorr = val === currentQuestion.answer;
+      for (let i = 0; i < currentQuestion.bubbleItems.length; i++) {
+        const item = currentQuestion.bubbleItems[i];
         let bestX = 0, bestY = 0;
         let attempts = 0, valid = false;
 
-        while (!valid && attempts < 100) {
+        while (!valid && attempts < 120) {
           attempts++;
           bestX = Math.random() * (maxX - minX) + minX;
           bestY = Math.random() * (maxY - minY) + minY;
           valid = true;
           for (let c of coords) {
-            if (Math.hypot(bestX - c.x, bestY - c.y) < CONFIG.bubbleRadius * 2.8) {
+            if (Math.hypot(bestX - c.x, bestY - c.y) < CONFIG.bubbleRadius * 2.6) {
               valid = false;
               break;
             }
           }
         }
         coords.push({ x: bestX, y: bestY });
-        bubbles.push(new HologramBubble(val, isCorr, bestX, bestY));
+        bubbles.push(new HologramBubble(item.value, item.isCorrect, bestX, bestY));
       }
     }
 
-    // --- MULTITOUCH JOYSTICK SYSTEM ---
+    // --- GRACE PERIOD TIMER LOGIC (2 DETIK UNTUK LAWAN) ---
+    function triggerGracePeriod() {
+      // Hanya picu jika salah satu belum menjawab
+      if (wormP1.hasAnsweredCurrent && wormP2.hasAnsweredCurrent) {
+        clearGracePeriod();
+        setTimeout(advanceNextQuestion, 400);
+        return;
+      }
+
+      if (graceTimer !== null) return; // Sudah berjalan
+
+      const banner = document.getElementById('gracePeriodBanner');
+      const timeTxt = document.getElementById('graceSecondsText');
+      banner.classList.remove('hidden');
+
+      graceTimeRemaining = 2.0;
+      timeTxt.innerText = "2.0";
+
+      graceInterval = setInterval(() => {
+        if (currentState !== GameState.PLAYING) return;
+        graceTimeRemaining -= 0.1;
+        if (graceTimeRemaining > 0) {
+          timeTxt.innerText = graceTimeRemaining.toFixed(1);
+        } else {
+          timeTxt.innerText = "0.0";
+        }
+      }, 100);
+
+      graceTimer = setTimeout(() => {
+        clearGracePeriod();
+        advanceNextQuestion();
+      }, 2000);
+    }
+
+    function clearGracePeriod() {
+      if (graceTimer !== null) {
+        clearTimeout(graceTimer);
+        graceTimer = null;
+      }
+      if (graceInterval !== null) {
+        clearInterval(graceInterval);
+        graceInterval = null;
+      }
+      const banner = document.getElementById('gracePeriodBanner');
+      if (banner) banner.classList.add('hidden');
+    }
+
+    // --- MULTITOUCH JOYSTICKS ---
     let touchTrackP1 = null;
     let touchTrackP2 = null;
 
@@ -1166,7 +1180,7 @@
     window.addEventListener('touchend', handleTouchEnd, { passive: false });
     window.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
-    // --- KEYBOARD DESKTOP CONTROLS ---
+    // Keyboard
     const keysPressed = {};
     window.addEventListener('keydown', (e) => {
       keysPressed[e.key.toLowerCase()] = true;
@@ -1194,7 +1208,7 @@
       if (p2X !== 0 || p2Y !== 0) wormP2.inputVector = { x: p2X, y: p2Y };
     }
 
-    // --- COLLISION & GAME MECHANICS ---
+    // --- COLLISION LOGIC DENGAN ATURAN 2 DETIK ---
     function checkCollisions(worm) {
       if (worm.hasAnsweredCurrent) return;
 
@@ -1234,12 +1248,14 @@
               particles.push(new Particle(b.x, b.y, Math.random() > 0.5 ? '#00f0ff' : '#4ade80', 1.3));
             }
 
-            // Target Segment Mode instant victory check!
             if (CONFIG.gameMode === 'target' && worm.segments.length >= CONFIG.targetSegments) {
               updateScoreHUD();
               finishMatch();
               return;
             }
+
+            // Jika satu pemain benar, berikan kesempatan 2 detik untuk lawan
+            triggerGracePeriod();
           } else {
             worm.stats.wrong++;
             worm.stats.combo = 0;
@@ -1252,12 +1268,20 @@
             for (let p = 0; p < 20; p++) {
               particles.push(new Particle(b.x, b.y, '#ff0055', 1.0));
             }
+
+            // Jika kedua pemain sudah menjawab (misal keduanya salah)
+            if (wormP1.hasAnsweredCurrent && wormP2.hasAnsweredCurrent) {
+              clearGracePeriod();
+              setTimeout(advanceNextQuestion, 500);
+            }
           }
 
           updateScoreHUD();
 
+          // Jika setelah tabrakan ini kedua pemain sudah tuntas menjawab
           if (wormP1.hasAnsweredCurrent && wormP2.hasAnsweredCurrent) {
-            setTimeout(advanceNextQuestion, 600);
+            clearGracePeriod();
+            setTimeout(advanceNextQuestion, 400);
           }
           break;
         }
@@ -1266,6 +1290,7 @@
 
     function advanceNextQuestion() {
       if (currentState !== GameState.PLAYING) return;
+      clearGracePeriod();
       wormP1.hasAnsweredCurrent = false;
       wormP2.hasAnsweredCurrent = false;
       generateQuestion();
@@ -1289,7 +1314,6 @@
       } else p2Badge.style.opacity = '0';
     }
 
-    // --- ARENA DRAWING ---
     function drawCyberArena() {
       const gridSpacing = 45;
       ctx.lineWidth = 1;
@@ -1315,7 +1339,6 @@
         ctx.fill();
       });
 
-      // Neon Boundary
       ctx.save();
       const pad = 12;
       ctx.lineWidth = 3;
@@ -1324,7 +1347,6 @@
       ctx.shadowColor = lastChanceActive ? '#ff0000' : '#00f0ff';
       ctx.strokeRect(pad, pad, canvas.width - pad * 2, canvas.height - pad * 2);
 
-      // Corner tech brackets
       const cLen = 28;
       ctx.beginPath(); ctx.moveTo(pad, pad + cLen); ctx.lineTo(pad, pad); ctx.lineTo(pad + cLen, pad); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(canvas.width - pad - cLen, pad); ctx.lineTo(canvas.width - pad, pad); ctx.lineTo(canvas.width - pad, pad + cLen); ctx.stroke();
@@ -1333,7 +1355,6 @@
       ctx.restore();
     }
 
-    // --- GAME LOOP ---
     function gameLoop() {
       ctx.fillStyle = '#030712';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1373,17 +1394,16 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // --- ROUND INITIALIZATION ---
     function initRound() {
       roundQuestionsHistory = [];
       previousQuestionsKeys = [];
+      clearGracePeriod();
 
       applyJoystickSizing();
 
       const skin1 = SKINS[p1Config.skinKey] || SKINS.blue;
       const skin2 = SKINS[p2Config.skinKey] || SKINS.red;
 
-      // Update HUD Styling with chosen skins
       document.getElementById('p1HudName').innerText = p1Config.name.toUpperCase();
       document.getElementById('p1HudName').className = `text-xs uppercase tracking-wider font-bold truncate ${skin1.textClass}`;
       document.getElementById('p1HudCard').style.borderColor = skin1.hex;
@@ -1402,7 +1422,6 @@
       document.getElementById('joyStickP2').style.background = skin2.hex;
       document.getElementById('hintP2').style.color = skin2.hex;
 
-      // Setup Target progress if target mode
       const p1Prog = document.getElementById('p1TargetProgress');
       const p2Prog = document.getElementById('p2TargetProgress');
       if (CONFIG.gameMode === 'target') {
@@ -1428,7 +1447,6 @@
       generateQuestion();
     }
 
-    // --- TIMERS & COUNTDOWN ---
     function startCountdown() {
       currentState = GameState.COUNTDOWN;
       countdownVal = 3;
@@ -1489,10 +1507,11 @@
       document.getElementById('timerText').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
-    // --- FINISH & VICTORY LOGIC ---
     function finishMatch() {
       currentState = GameState.FINISHED;
       lastChanceActive = false;
+      clearGracePeriod();
+
       if (matchTimerInterval) clearInterval(matchTimerInterval);
       document.getElementById('lastChanceBanner').style.opacity = '0';
       document.getElementById('timerBadge').classList.remove('border-rose-500', 'text-rose-400');
@@ -1597,7 +1616,6 @@
       document.getElementById('victoryModal').classList.remove('hidden');
     }
 
-    // --- EDUCATIONAL REVIEW LOG DRAWER ---
     function buildReviewDrawer() {
       const container = document.getElementById('reviewList');
       container.innerHTML = '';
@@ -1613,11 +1631,11 @@
 
         const p1Status = q.p1Answered 
           ? (q.p1Answered.correct ? `<span class="text-emerald-400 font-bold">✓ Benar (${q.p1Answered.choice})</span>` : `<span class="text-rose-400 font-bold">✗ Salah (${q.p1Answered.choice})</span>`)
-          : `<span class="text-slate-500 font-mono">-</span>`;
+          : `<span class="text-slate-500 font-mono">Waktu Habis / Lewat</span>`;
 
         const p2Status = q.p2Answered 
           ? (q.p2Answered.correct ? `<span class="text-emerald-400 font-bold">✓ Benar (${q.p2Answered.choice})</span>` : `<span class="text-rose-400 font-bold">✗ Salah (${q.p2Answered.choice})</span>`)
-          : `<span class="text-slate-500 font-mono">-</span>`;
+          : `<span class="text-slate-500 font-mono">Waktu Habis / Lewat</span>`;
 
         item.innerHTML = `
           <div class="flex items-center justify-between font-orbitron font-bold">
@@ -1633,7 +1651,6 @@
       });
     }
 
-    // --- LIVE 3D PREVIEW CANVASES FOR WORM SELECTION ---
     function renderPreviewWorm(canvasId, skinKey) {
       const pCanvas = document.getElementById(canvasId);
       if (!pCanvas) return;
@@ -1650,7 +1667,6 @@
       const startX = w - 60;
       const centerY = h / 2;
 
-      // Draw Segments
       for (let i = segments - 1; i >= 0; i--) {
         const segX = startX - i * 20;
         const segY = centerY + Math.sin(i * 0.9) * 8;
@@ -1671,7 +1687,6 @@
         pCtx.stroke();
       }
 
-      // Draw Head
       const hX = startX + 5;
       const hY = centerY;
       const headGrad = pCtx.createRadialGradient(hX - 5, hY - 5, 2, hX, hY, headRadius);
@@ -1688,7 +1703,6 @@
       pCtx.strokeStyle = '#ffffff';
       pCtx.stroke();
 
-      // Eye
       pCtx.beginPath();
       pCtx.arc(hX + 6, hY - 4, 5, 0, Math.PI * 2);
       pCtx.fillStyle = '#ffffff';
@@ -1709,7 +1723,6 @@
       Object.keys(SKINS).forEach(key => {
         const s = SKINS[key];
 
-        // P1 Color Pill
         const btn1 = document.createElement('button');
         btn1.className = `w-7 h-7 rounded-full border-2 transition transform hover:scale-110 flex items-center justify-center ${p1Config.skinKey === key ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`;
         btn1.style.backgroundColor = s.hex;
@@ -1720,7 +1733,6 @@
         });
         paletteP1.appendChild(btn1);
 
-        // P2 Color Pill
         const btn2 = document.createElement('button');
         btn2.className = `w-7 h-7 rounded-full border-2 transition transform hover:scale-110 flex items-center justify-center ${p2Config.skinKey === key ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`;
         btn2.style.backgroundColor = s.hex;
@@ -1733,7 +1745,6 @@
       });
     }
 
-    // --- UI EVENT BINDINGS ---
     document.getElementById('btnStartGame').addEventListener('click', () => {
       sound.init();
       p1Config.name = document.getElementById('inputP1Name').value.trim() || "Player 1";
@@ -1746,7 +1757,6 @@
       startCountdown();
     });
 
-    // Preset Curriculum Buttons
     document.querySelectorAll('.preset-rule-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const target = e.currentTarget;
@@ -1760,7 +1770,6 @@
       });
     });
 
-    // Game Mode Toggle
     document.getElementById('btnModeTime').addEventListener('click', () => {
       CONFIG.gameMode = 'time';
       document.getElementById('btnModeTime').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1.5';
@@ -1777,7 +1786,6 @@
       document.getElementById('timeAttackContainer').classList.add('hidden');
     });
 
-    // Timer Duration Buttons
     document.querySelectorAll('.time-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         CONFIG.matchDurationSec = parseInt(e.target.getAttribute('data-sec'), 10);
@@ -1786,7 +1794,6 @@
       });
     });
 
-    // Target Segment Buttons
     document.querySelectorAll('.target-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         CONFIG.targetSegments = parseInt(e.target.getAttribute('data-target'), 10);
@@ -1795,7 +1802,6 @@
       });
     });
 
-    // In-game Pause & Controls
     document.getElementById('btnPauseGame').addEventListener('click', () => {
       if (currentState === GameState.PLAYING) {
         currentState = GameState.PAUSED;
@@ -1814,10 +1820,10 @@
     document.getElementById('btnQuitToMenu').addEventListener('click', () => {
       document.getElementById('pauseModal').classList.add('hidden');
       document.getElementById('menuScreen').classList.remove('hidden');
+      clearGracePeriod();
       currentState = GameState.MENU;
     });
 
-    // Sound & Fullscreen Top Bar Buttons
     document.getElementById('btnToggleAudio').addEventListener('click', (e) => {
       sound.enabled = !sound.enabled;
       e.currentTarget.innerText = sound.enabled ? '🔊' : '🔇';
@@ -1830,12 +1836,10 @@
       }
     });
 
-    // How to Play Modal
     document.getElementById('btnOpenHowTo').addEventListener('click', () => document.getElementById('howToModal').classList.remove('hidden'));
     document.getElementById('btnCloseHowTo').addEventListener('click', () => document.getElementById('howToModal').classList.add('hidden'));
     document.getElementById('btnGotIt').addEventListener('click', () => document.getElementById('howToModal').classList.add('hidden'));
 
-    // Victory Screen Buttons
     document.getElementById('btnRematch').addEventListener('click', () => {
       document.getElementById('victoryModal').classList.add('hidden');
       initRound();
@@ -1844,10 +1848,10 @@
     document.getElementById('btnBackToMenu').addEventListener('click', () => {
       document.getElementById('victoryModal').classList.add('hidden');
       document.getElementById('menuScreen').classList.remove('hidden');
+      clearGracePeriod();
       currentState = GameState.MENU;
     });
 
-    // Review Modal Buttons
     document.getElementById('btnOpenReview').addEventListener('click', () => {
       buildReviewDrawer();
       document.getElementById('reviewModal').classList.remove('hidden');
@@ -1855,7 +1859,6 @@
     document.getElementById('btnCloseReview').addEventListener('click', () => document.getElementById('reviewModal').classList.add('hidden'));
     document.getElementById('btnDismissReview').addEventListener('click', () => document.getElementById('reviewModal').classList.add('hidden'));
 
-    // Custom Mult inputs binding
     document.getElementById('settingMinMult').addEventListener('change', (e) => {
       CONFIG.multMin = parseInt(e.target.value, 10) || 1;
       CONFIG.presetMode = 'custom';
@@ -1865,7 +1868,6 @@
       CONFIG.presetMode = 'custom';
     });
 
-    // --- WINDOW LOAD INITIALIZATION ---
     window.onload = function() {
       resizeCanvas();
       buildColorPalettes();
