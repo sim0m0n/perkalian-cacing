@@ -15,9 +15,11 @@
       -webkit-user-select: none;
       touch-action: none;
     }
-    body {
+    html, body {
       margin: 0;
       padding: 0;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
       background-color: #030712;
       font-family: 'Rajdhani', sans-serif;
@@ -27,7 +29,7 @@
       font-family: 'Orbitron', monospace, sans-serif;
     }
     .glass-panel {
-      background: rgba(10, 16, 32, 0.82);
+      background: rgba(10, 16, 32, 0.85);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.12);
@@ -50,381 +52,428 @@
     .animate-pulse-slow {
       animation: pulse-slow 2s infinite ease-in-out;
     }
+    #uiScaleContainer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      transform-origin: center center;
+      transition: transform 0.15s ease-out;
+    }
   </style>
 </head>
-<body class="w-screen h-screen relative bg-slate-950 overflow-hidden">
+<body class="relative bg-slate-950 overflow-hidden">
 
   <!-- Main Game Canvas -->
   <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block z-0"></canvas>
 
-  <!-- TOP IN-GAME HUD -->
-  <header id="gameHUD" class="absolute top-0 left-0 right-0 z-10 px-3 py-2 flex items-center justify-between pointer-events-none transition-opacity duration-300">
-    <!-- Player 1 Status Card -->
-    <div id="p1HudCard" class="glass-panel rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 border-l-4 flex items-center gap-2.5 sm:gap-3 w-40 sm:w-56 pointer-events-auto">
-      <div id="p1HudAvatar" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-orbitron font-black text-xs sm:text-sm border shadow-md">
-        P1
-      </div>
-      <div class="overflow-hidden">
-        <div id="p1HudName" class="text-xs uppercase tracking-wider font-bold truncate">PLAYER 1</div>
-        <div class="flex items-baseline gap-1">
-          <span id="p1SegmentCount" class="font-orbitron text-lg sm:text-2xl font-black text-white">5</span>
-          <span class="text-[10px] text-slate-300 uppercase font-semibold">Segs</span>
-          <span id="p1TargetProgress" class="text-[10px] text-yellow-300 font-mono hidden">/ 25</span>
+  <!-- Scaled UI Layer -->
+  <div id="uiScaleContainer">
+
+    <!-- TOP IN-GAME HUD -->
+    <header id="gameHUD" class="absolute top-0 left-0 right-0 z-10 px-3 py-2 flex items-center justify-between pointer-events-none transition-opacity duration-300">
+      <!-- Player 1 Status Card -->
+      <div id="p1HudCard" class="glass-panel rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 border-l-4 flex items-center gap-2.5 sm:gap-3 w-36 sm:w-56 pointer-events-auto">
+        <div id="p1HudAvatar" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-orbitron font-black text-xs sm:text-sm border shadow-md">
+          P1
         </div>
-        <div id="p1ComboBadge" class="text-[10px] text-yellow-300 font-orbitron font-bold opacity-0 transition-opacity">COMBO x2!</div>
+        <div class="overflow-hidden">
+          <div id="p1HudName" class="text-xs uppercase tracking-wider font-bold truncate">PLAYER 1</div>
+          <div class="flex items-baseline gap-1">
+            <span id="p1SegmentCount" class="font-orbitron text-lg sm:text-2xl font-black text-white">5</span>
+            <span class="text-[10px] text-slate-300 uppercase font-semibold">Segs</span>
+            <span id="p1TargetProgress" class="text-[10px] text-yellow-300 font-mono hidden">/ 25</span>
+          </div>
+          <div id="p1ComboBadge" class="text-[10px] text-yellow-300 font-orbitron font-bold opacity-0 transition-opacity">COMBO x2!</div>
+        </div>
+      </div>
+
+      <!-- Center Billboard & Quick Actions -->
+      <div class="flex flex-col items-center pointer-events-auto">
+        <!-- Question Billboard -->
+        <div id="questionContainer" class="glass-panel px-4 py-1 sm:px-6 sm:py-1.5 rounded-2xl border border-cyan-500/40 shadow-[0_0_25px_rgba(0,240,255,0.25)] flex flex-col items-center min-w-[170px] sm:min-w-[240px]">
+          <span id="questionCategoryTag" class="text-[9px] tracking-widest text-slate-400 uppercase font-bold">SOAL PERKALIAN</span>
+          <div id="mathQuestion" class="font-orbitron font-black text-2xl sm:text-4xl tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]">
+            7 × 8 = ?
+          </div>
+          <div id="questionPrompt" class="text-[9px] sm:text-[10px] text-cyan-300 font-semibold tracking-wide">TABRAK GELEMBUNG BENAR! (2 BENAR & 3 SALAH)</div>
+        </div>
+
+        <!-- Grace Period Bar (2s Opportunity for Opponent) -->
+        <div id="gracePeriodBanner" class="mt-1 px-4 py-0.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 font-orbitron font-bold text-xs tracking-wider hidden animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+          ⚡ KESEMPATAN LAWAN: <span id="graceSecondsText">2.0</span>s ⚡
+        </div>
+
+        <!-- Match Info & Controls -->
+        <div class="mt-1 flex items-center gap-1.5">
+          <div id="timerBadge" class="px-2.5 py-0.5 rounded-full glass-panel border border-slate-700/80 font-orbitron font-bold text-xs text-slate-200 tracking-wider flex items-center gap-1 shadow-md">
+            <span id="modeIcon">⏱️</span>
+            <span id="timerText">01:00</span>
+          </div>
+          <button id="btnQuickZoom" title="Sesuaikan Skala Tampilan" class="px-2 h-7 rounded-full glass-panel border border-cyan-500/50 hover:border-cyan-300 flex items-center justify-center text-cyan-300 text-[11px] font-orbitron font-bold gap-1 transition">
+            🖥️ <span id="quickZoomLabel">FIT</span>
+          </button>
+          <button id="btnPauseGame" title="Pause Game" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
+            ⏸️
+          </button>
+          <button id="btnToggleAudio" title="Mute/Unmute Audio" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
+            🔊
+          </button>
+          <button id="btnToggleFullscreen" title="Layar Penuh" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
+            ⛶
+          </button>
+        </div>
+      </div>
+
+      <!-- Player 2 / Bot Status Card -->
+      <div id="p2HudCard" class="glass-panel rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 border-r-4 flex items-center justify-end gap-2.5 sm:gap-3 w-36 sm:w-56 text-right pointer-events-auto">
+        <div class="overflow-hidden">
+          <div id="p2HudName" class="text-xs uppercase tracking-wider font-bold truncate">BOT AI</div>
+          <div class="flex items-baseline justify-end gap-1">
+            <span id="p2SegmentCount" class="font-orbitron text-lg sm:text-2xl font-black text-white">5</span>
+            <span class="text-[10px] text-slate-300 uppercase font-semibold">Segs</span>
+            <span id="p2TargetProgress" class="text-[10px] text-yellow-300 font-mono hidden">/ 25</span>
+          </div>
+          <div id="p2ComboBadge" class="text-[10px] text-yellow-300 font-orbitron font-bold opacity-0 transition-opacity">COMBO x2!</div>
+        </div>
+        <div id="p2HudAvatar" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-orbitron font-black text-xs sm:text-sm border shadow-md">
+          BOT
+        </div>
+      </div>
+    </header>
+
+    <!-- LAST CHANCE BANNER -->
+    <div id="lastChanceBanner" class="absolute top-28 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-0 transition-all duration-300 transform scale-90">
+      <div class="bg-red-600/90 text-white font-orbitron font-black text-xs sm:text-sm px-6 py-1 rounded-full uppercase tracking-widest border border-yellow-300 shadow-[0_0_20px_#ff0000] animate-pulse">
+        ⚠️ LAST CHANCE MODE: DOUBLE TENSION! ⚠️
       </div>
     </div>
 
-    <!-- Center: Target Question, Mode/Timer & Quick Action Buttons -->
-    <div class="flex flex-col items-center pointer-events-auto">
-      <!-- Question Billboard -->
-      <div id="questionContainer" class="glass-panel px-5 py-1.5 sm:px-6 sm:py-2 rounded-2xl border border-cyan-500/40 shadow-[0_0_25px_rgba(0,240,255,0.25)] flex flex-col items-center min-w-[180px] sm:min-w-[240px]">
-        <span id="questionCategoryTag" class="text-[9px] tracking-widest text-slate-400 uppercase font-bold">SOAL PERKALIAN</span>
-        <div id="mathQuestion" class="font-orbitron font-black text-2xl sm:text-4xl tracking-wider text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.7)]">
-          7 × 8 = ?
+    <!-- TOUCH JOYSTICKS -->
+    <!-- Player 1 Joystick (Dapat dipindah Kiri/Kanan jika Solo di HP) -->
+    <div id="joystickZoneP1" class="absolute bottom-4 left-4 w-40 h-40 sm:w-48 sm:h-48 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
+      <div id="joyBaseP1" class="w-28 h-28 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
+        <div id="joyStickP1" class="w-12 h-12 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
+          <span class="font-orbitron font-bold text-[9px] text-slate-900">P1</span>
         </div>
-        <div id="questionPrompt" class="text-[9px] sm:text-[10px] text-cyan-300 font-semibold tracking-wide">TABRAK GELEMBUNG BENAR! (2 JAWABAN BENAR)</div>
       </div>
-
-      <!-- Grace Period Countdown Bar (Hidden by default) -->
-      <div id="gracePeriodBanner" class="mt-1 px-4 py-0.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 font-orbitron font-bold text-xs tracking-wider hidden animate-pulse shadow-[0_0_15px_rgba(245,158,11,0.5)]">
-        ⚡ WAKTU LAWAN: <span id="graceSecondsText">2.0</span>s ⚡
-      </div>
-
-      <!-- Match Info Pill & Top Controls -->
-      <div class="mt-1 flex items-center gap-1.5">
-        <div id="timerBadge" class="px-3 py-0.5 rounded-full glass-panel border border-slate-700/80 font-orbitron font-bold text-xs sm:text-sm text-slate-200 tracking-wider flex items-center gap-1 shadow-md">
-          <span id="modeIcon">⏱️</span>
-          <span id="timerText">01:00</span>
-        </div>
-        <button id="btnPauseGame" title="Pause Game" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
-          ⏸️
-        </button>
-        <button id="btnToggleAudio" title="Mute/Unmute Audio" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
-          🔊
-        </button>
-        <button id="btnToggleFullscreen" title="Layar Penuh" class="w-7 h-7 rounded-full glass-panel border border-slate-700 hover:border-cyan-400 flex items-center justify-center text-slate-300 hover:text-white text-xs transition">
-          ⛶
-        </button>
-      </div>
+      <span id="hintP1" class="absolute bottom-0.5 text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-80">SENTUH / WASD</span>
     </div>
 
-    <!-- Player 2 Status Card -->
-    <div id="p2HudCard" class="glass-panel rounded-2xl px-3 py-1.5 sm:px-4 sm:py-2 border-r-4 flex items-center justify-end gap-2.5 sm:gap-3 w-40 sm:w-56 text-right pointer-events-auto">
-      <div class="overflow-hidden">
-        <div id="p2HudName" class="text-xs uppercase tracking-wider font-bold truncate">PLAYER 2</div>
-        <div class="flex items-baseline justify-end gap-1">
-          <span id="p2SegmentCount" class="font-orbitron text-lg sm:text-2xl font-black text-white">5</span>
-          <span class="text-[10px] text-slate-300 uppercase font-semibold">Segs</span>
-          <span id="p2TargetProgress" class="text-[10px] text-yellow-300 font-mono hidden">/ 25</span>
+    <!-- Player 2 Joystick (Otomatis tersembunyi saat VS BOT di HP) -->
+    <div id="joystickZoneP2" class="absolute bottom-4 right-4 w-40 h-40 sm:w-48 sm:h-48 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
+      <div id="joyBaseP2" class="w-28 h-28 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
+        <div id="joyStickP2" class="w-12 h-12 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
+          <span class="font-orbitron font-bold text-[9px] text-white">P2</span>
         </div>
-        <div id="p2ComboBadge" class="text-[10px] text-yellow-300 font-orbitron font-bold opacity-0 transition-opacity">COMBO x2!</div>
       </div>
-      <div id="p2HudAvatar" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-orbitron font-black text-xs sm:text-sm border shadow-md">
-        P2
-      </div>
+      <span id="hintP2" class="absolute bottom-0.5 text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-80">SENTUH / PANAH</span>
     </div>
-  </header>
 
-  <!-- LAST CHANCE ALERT BANNER (Active in final 10s of Time Attack) -->
-  <div id="lastChanceBanner" class="absolute top-28 left-1/2 -translate-x-1/2 z-20 pointer-events-none opacity-0 transition-all duration-300 transform scale-90">
-    <div class="bg-red-600/90 text-white font-orbitron font-black text-xs sm:text-sm px-6 py-1 rounded-full uppercase tracking-widest border border-yellow-300 shadow-[0_0_20px_#ff0000] animate-pulse">
-      ⚠️ LAST CHANCE MODE: DOUBLE TENSION! ⚠️
-    </div>
-  </div>
-
-  <!-- VIRTUAL JOYSTICK OVERLAYS -->
-  <div id="joystickZoneP1" class="absolute bottom-4 left-4 w-44 h-44 sm:w-52 sm:h-52 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
-    <div id="joyBaseP1" class="w-32 h-32 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
-      <div id="joyStickP1" class="w-14 h-14 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
-        <span class="font-orbitron font-bold text-[10px] text-slate-900">P1</span>
-      </div>
-    </div>
-    <span id="hintP1" class="absolute bottom-1 text-[10px] font-bold uppercase tracking-widest pointer-events-none opacity-80">WASD / TOUCH</span>
-  </div>
-
-  <div id="joystickZoneP2" class="absolute bottom-4 right-4 w-44 h-44 sm:w-52 sm:h-52 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
-    <div id="joyBaseP2" class="w-32 h-32 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
-      <div id="joyStickP2" class="w-14 h-14 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
-        <span class="font-orbitron font-bold text-[10px] text-white">P2</span>
-      </div>
-    </div>
-    <span id="hintP2" class="absolute bottom-1 text-[10px] font-bold uppercase tracking-widest pointer-events-none opacity-80">ARROWS / TOUCH</span>
-  </div>
-
-  <!-- MAIN SCREEN -->
-  <div id="menuScreen" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-3 sm:px-6 py-4 overflow-y-auto custom-scrollbar">
-    <div class="glass-panel max-w-4xl w-full rounded-3xl p-5 sm:p-7 border border-cyan-500/30 shadow-[0_0_50px_rgba(0,240,255,0.18)] relative my-auto">
-      <div class="text-center mb-5">
-        <div class="inline-block px-3 py-0.5 rounded-full bg-cyan-900/40 border border-cyan-400/30 text-cyan-300 font-orbitron text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-1">
-          Futuristic 2-Player Multiplication Arcade
+    <!-- MAIN MENU SCREEN -->
+    <div id="menuScreen" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-3 sm:px-6 py-3 overflow-y-auto custom-scrollbar pointer-events-auto">
+      <div class="glass-panel max-w-4xl w-full rounded-3xl p-4 sm:p-6 border border-cyan-500/30 shadow-[0_0_50px_rgba(0,240,255,0.18)] relative my-auto">
+        
+        <!-- Header -->
+        <div class="text-center mb-3">
+          <div class="inline-block px-3 py-0.5 rounded-full bg-cyan-900/40 border border-cyan-400/30 text-cyan-300 font-orbitron text-[10px] sm:text-xs font-bold tracking-widest uppercase mb-1">
+            Futuristic Multiplication Battle
+          </div>
+          <h1 class="font-orbitron text-2xl sm:text-4xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-rose-500 drop-shadow-md">
+            CYBER WORM
+          </h1>
+          <p class="font-orbitron text-xs sm:text-sm tracking-widest text-slate-400">
+            MATH BATTLE <span class="text-cyan-400 font-bold">by : si_momon</span>
+          </p>
         </div>
-        <h1 class="font-orbitron text-3xl sm:text-5xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-white to-rose-500 drop-shadow-md">
-          CYBER WORM
-        </h1>
-        <p class="font-orbitron text-xs sm:text-sm tracking-widest text-slate-400">
-          MATH BATTLE <span class="text-cyan-400 font-bold">by : si_momon</span>
-        </p>
-      </div>
 
-      <!-- Character Setup -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-        <div id="cardP1Config" class="p-4 rounded-2xl bg-slate-900/70 border border-cyan-500/40 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-3.5 h-3.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]"></span>
-              <span class="font-orbitron text-xs font-bold text-cyan-300">PLAYER 1 (SISI KIRI)</span>
-            </div>
-            <span class="text-[10px] text-slate-400 font-mono">[W, A, S, D]</span>
+        <!-- SELECT OPPONENT TYPE (PVP VS BOT) -->
+        <div class="mb-3 p-2.5 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div class="text-left">
+            <span class="font-orbitron text-xs font-bold text-cyan-300 uppercase block">🎮 Jenis Pertandingan:</span>
+            <span class="text-[11px] text-slate-400">Pilih bermain solo lawan Komputer atau berdua di satu layar.</span>
           </div>
-          <div>
-            <label class="block text-[11px] text-slate-300 font-bold mb-1">Nama Pemain 1:</label>
-            <input id="inputP1Name" type="text" value="Cyber Blue" maxlength="12" class="w-full px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-700 text-white font-orbitron text-xs focus:border-cyan-400 outline-none">
-          </div>
-          <div class="h-20 w-full rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center relative overflow-hidden">
-            <canvas id="previewCanvasP1" width="340" height="80" class="w-full h-full"></canvas>
-            <span class="absolute bottom-1 right-2 text-[9px] text-slate-500 font-mono">Live 3D Preview</span>
-          </div>
-          <div>
-            <label class="block text-[10px] text-slate-300 font-bold mb-1.5 uppercase">Pilih Skin Neon P1:</label>
-            <div id="paletteP1" class="flex items-center gap-2 flex-wrap"></div>
+          <div class="grid grid-cols-2 gap-1.5 w-full sm:w-auto">
+            <button id="btnOpponentBot" class="py-1.5 px-3 rounded-xl border border-cyan-400 bg-cyan-500/20 text-cyan-200 font-orbitron text-xs font-bold flex items-center justify-center gap-1.5 transition">
+              <span>🤖</span> VS BOT (1 Pemain)
+            </button>
+            <button id="btnOpponentPvP" class="py-1.5 px-3 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-300 font-orbitron text-xs font-semibold flex items-center justify-center gap-1.5 transition">
+              <span>👥</span> 2 Pemain (PvP)
+            </button>
           </div>
         </div>
 
-        <div id="cardP2Config" class="p-4 rounded-2xl bg-slate-900/70 border border-rose-500/40 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="w-3.5 h-3.5 rounded-full bg-rose-500 shadow-[0_0_8px_#ff0055]"></span>
-              <span class="font-orbitron text-xs font-bold text-rose-300">PLAYER 2 (SISI KANAN)</span>
-            </div>
-            <span class="text-[10px] text-slate-400 font-mono">[Panah Arah]</span>
-          </div>
-          <div>
-            <label class="block text-[11px] text-slate-300 font-bold mb-1">Nama Pemain 2:</label>
-            <input id="inputP2Name" type="text" value="Neon Red" maxlength="12" class="w-full px-3 py-1.5 rounded-lg bg-slate-950/80 border border-slate-700 text-white font-orbitron text-xs focus:border-rose-400 outline-none">
-          </div>
-          <div class="h-20 w-full rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center relative overflow-hidden">
-            <canvas id="previewCanvasP2" width="340" height="80" class="w-full h-full"></canvas>
-            <span class="absolute bottom-1 right-2 text-[9px] text-slate-500 font-mono">Live 3D Preview</span>
-          </div>
-          <div>
-            <label class="block text-[10px] text-slate-300 font-bold mb-1.5 uppercase">Pilih Skin Neon P2:</label>
-            <div id="paletteP2" class="flex items-center gap-2 flex-wrap"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Config Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs">
-        <div>
-          <label class="block font-orbitron text-xs text-cyan-300 font-bold uppercase mb-2">
-            📚 Materi Perkalian Dasar SD:
-          </label>
-          <div class="grid grid-cols-2 gap-1.5 mb-2">
-            <button class="preset-rule-btn py-2 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k2">
-              <span class="block font-bold text-cyan-300">Kelas 2 SD</span>
-              <span class="text-[10px] text-slate-400">×1, ×2, ×5, ×10</span>
-            </button>
-            <button class="preset-rule-btn py-2 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k3">
-              <span class="block font-bold text-cyan-300">Kelas 3 SD</span>
-              <span class="text-[10px] text-slate-400">×3, ×4, ×6</span>
-            </button>
-            <button class="preset-rule-btn py-2 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k4">
-              <span class="block font-bold text-cyan-300">Kelas 4 SD</span>
-              <span class="text-[10px] text-slate-400">×7, ×8, ×9</span>
-            </button>
-            <button class="preset-rule-btn py-2 px-2 rounded-lg border border-cyan-500/60 bg-cyan-500/20 font-semibold text-white transition text-left" data-type="master">
-              <span class="block font-bold text-cyan-200">Master Campuran</span>
-              <span class="text-[10px] text-slate-300">Tabel 1 – 10 Acak</span>
-            </button>
-          </div>
-          <div class="flex items-center gap-2 pt-1 text-slate-300">
-            <span class="text-[11px] font-semibold">Custom Rentang:</span>
-            <input id="settingMinMult" type="number" min="1" max="10" value="1" class="w-12 px-1.5 py-0.5 bg-slate-950 border border-slate-700 rounded text-center text-cyan-300 font-bold text-xs">
-            <span>sampai</span>
-            <input id="settingMaxMult" type="number" min="1" max="12" value="10" class="w-12 px-1.5 py-0.5 bg-slate-950 border border-slate-700 rounded text-center text-cyan-300 font-bold text-xs">
-          </div>
-        </div>
-
-        <div>
-          <label class="block font-orbitron text-xs text-yellow-300 font-bold uppercase mb-2">
-            🏆 Mode Game & Pengaturan:
-          </label>
-          <div class="grid grid-cols-2 gap-2 mb-2.5">
-            <button id="btnModeTime" class="mode-select-btn py-1.5 px-3 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1.5">
-              <span>⏱️</span> Time Attack
-            </button>
-            <button id="btnModeTarget" class="mode-select-btn py-1.5 px-3 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1.5">
-              <span>🎯</span> Target Segmen
-            </button>
-          </div>
-
-          <div id="timeAttackContainer" class="flex items-center gap-1.5 flex-wrap mb-2.5">
-            <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-950/40 text-[11px] text-slate-200" data-sec="30">30s</button>
-            <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/60 bg-cyan-500/20 text-[11px] text-cyan-200 font-bold" data-sec="60">1 Menit</button>
-            <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-950/40 text-[11px] text-slate-200" data-sec="120">2 Menit</button>
-            <button class="time-btn px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-950/40 text-[11px] text-slate-200" data-sec="180">3 Menit</button>
-          </div>
-
-          <div id="targetSegmentContainer" class="hidden items-center gap-1.5 flex-wrap mb-2.5">
-            <span class="text-[11px] text-slate-300">Target Menang:</span>
-            <button class="target-btn px-2.5 py-1 rounded-md border border-yellow-500/30 bg-yellow-950/40 text-[11px] text-slate-200" data-target="20">20 Segmen</button>
-            <button class="target-btn px-2.5 py-1 rounded-md border border-yellow-500/60 bg-yellow-500/20 text-[11px] text-yellow-200 font-bold" data-target="25">25 Segmen</button>
-            <button class="target-btn px-2.5 py-1 rounded-md border border-yellow-500/30 bg-yellow-950/40 text-[11px] text-slate-200" data-target="30">30 Segmen</button>
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
-            <div>
-              <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Kecepatan Ular:</label>
-              <select id="selectWormSpeed" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-slate-200 text-xs">
-                <option value="2.9">Santai (Pelan)</option>
-                <option value="3.8" selected>Normal</option>
-                <option value="4.8">Turbo (Cepat)</option>
-              </select>
+        <!-- 2-Player / Bot Setup Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+          <!-- P1 CARD -->
+          <div id="cardP1Config" class="p-3 rounded-2xl bg-slate-900/70 border border-cyan-500/40 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]"></span>
+                <span class="font-orbitron text-xs font-bold text-cyan-300">PLAYER 1</span>
+              </div>
+              <span class="text-[10px] text-slate-400 font-mono">[W, A, S, D]</span>
             </div>
             <div>
-              <label class="block text-[10px] text-slate-400 uppercase font-bold mb-1">Ukuran Joystick:</label>
-              <select id="selectJoySize" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-slate-200 text-xs">
-                <option value="sm">Kecil</option>
-                <option value="md" selected>Sedang</option>
-                <option value="lg">Besar</option>
-              </select>
+              <input id="inputP1Name" type="text" value="Cyber Blue" maxlength="12" class="w-full px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-700 text-white font-orbitron text-xs focus:border-cyan-400 outline-none">
+            </div>
+            <div class="h-16 w-full rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center relative overflow-hidden">
+              <canvas id="previewCanvasP1" width="340" height="70" class="w-full h-full"></canvas>
+              <span class="absolute bottom-1 right-2 text-[8px] text-slate-500 font-mono">Live 3D Preview</span>
+            </div>
+            <div id="paletteP1" class="flex items-center gap-1.5 flex-wrap"></div>
+          </div>
+
+          <!-- P2 / BOT CARD -->
+          <div id="cardP2Config" class="p-3 rounded-2xl bg-slate-900/70 border border-rose-500/40 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_8px_#ff0055]"></span>
+                <span id="titleP2Card" class="font-orbitron text-xs font-bold text-rose-300">CYBER BOT (KOMPUTER)</span>
+              </div>
+              <span id="p2ControlHint" class="text-[10px] text-slate-400 font-mono">[AI Bot]</span>
+            </div>
+
+            <!-- Name Input (Hidden if Bot) -->
+            <div id="p2NameInputContainer" class="hidden">
+              <input id="inputP2Name" type="text" value="Neon Red" maxlength="12" class="w-full px-2.5 py-1 rounded-lg bg-slate-950/80 border border-slate-700 text-white font-orbitron text-xs focus:border-rose-400 outline-none">
+            </div>
+
+            <!-- Bot Difficulty Selector (Active in Bot mode) -->
+            <div id="botDifficultyContainer" class="flex items-center justify-between bg-slate-950/80 p-1.5 rounded-lg border border-slate-800 text-xs">
+              <span class="text-[11px] text-slate-300 font-bold">Tingkat Kesulitan:</span>
+              <div class="flex gap-1">
+                <button class="bot-diff-btn px-2 py-0.5 rounded text-[10px] font-bold border border-emerald-500/50 text-slate-300" data-diff="easy">Santai</button>
+                <button class="bot-diff-btn px-2 py-0.5 rounded text-[10px] font-bold border border-cyan-500/60 bg-cyan-500/20 text-cyan-200" data-diff="normal">Normal</button>
+                <button class="bot-diff-btn px-2 py-0.5 rounded text-[10px] font-bold border border-rose-500/50 text-slate-300" data-diff="hard">Master</button>
+              </div>
+            </div>
+
+            <div class="h-16 w-full rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center relative overflow-hidden">
+              <canvas id="previewCanvasP2" width="340" height="70" class="w-full h-full"></canvas>
+              <span class="absolute bottom-1 right-2 text-[8px] text-slate-500 font-mono">Live 3D Preview</span>
+            </div>
+            <div id="paletteP2" class="flex items-center gap-1.5 flex-wrap"></div>
+          </div>
+        </div>
+
+        <!-- SETTINGS GRID -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3.5 p-3 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs">
+          <!-- Left: Math Settings -->
+          <div>
+            <label class="block font-orbitron text-xs text-cyan-300 font-bold uppercase mb-1.5">
+              📚 Materi Perkalian Dasar SD:
+            </label>
+            <div class="grid grid-cols-2 gap-1 mb-2">
+              <button class="preset-rule-btn py-1.5 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k2">
+                <span class="block font-bold text-cyan-300">Kelas 2 SD</span>
+                <span class="text-[9px] text-slate-400">×1, ×2, ×5, ×10</span>
+              </button>
+              <button class="preset-rule-btn py-1.5 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k3">
+                <span class="block font-bold text-cyan-300">Kelas 3 SD</span>
+                <span class="text-[9px] text-slate-400">×3, ×4, ×6</span>
+              </button>
+              <button class="preset-rule-btn py-1.5 px-2 rounded-lg border border-cyan-500/30 bg-cyan-950/30 font-semibold text-slate-300 hover:text-white transition text-left" data-type="k4">
+                <span class="block font-bold text-cyan-300">Kelas 4 SD</span>
+                <span class="text-[9px] text-slate-400">×7, ×8, ×9</span>
+              </button>
+              <button class="preset-rule-btn py-1.5 px-2 rounded-lg border border-cyan-500/60 bg-cyan-500/20 font-semibold text-white transition text-left" data-type="master">
+                <span class="block font-bold text-cyan-200">Master Campuran</span>
+                <span class="text-[9px] text-slate-300">Tabel 1 – 10 Acak</span>
+              </button>
+            </div>
+            <div class="flex items-center gap-2 pt-0.5 text-slate-300">
+              <span class="text-[11px] font-semibold">Rentang:</span>
+              <input id="settingMinMult" type="number" min="1" max="10" value="1" class="w-10 px-1 py-0.5 bg-slate-950 border border-slate-700 rounded text-center text-cyan-300 font-bold text-xs">
+              <span>s.d</span>
+              <input id="settingMaxMult" type="number" min="1" max="12" value="10" class="w-10 px-1 py-0.5 bg-slate-950 border border-slate-700 rounded text-center text-cyan-300 font-bold text-xs">
+            </div>
+          </div>
+
+          <!-- Right: Mode & Display Calibration -->
+          <div>
+            <label class="block font-orbitron text-xs text-yellow-300 font-bold uppercase mb-1.5">
+              🏆 Mode Game & Kalibrasi HP / IFP:
+            </label>
+
+            <div class="grid grid-cols-2 gap-1.5 mb-2">
+              <button id="btnModeTime" class="mode-select-btn py-1 px-2 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1 text-xs">
+                <span>⏱️</span> Time Attack
+              </button>
+              <button id="btnModeTarget" class="mode-select-btn py-1 px-2 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1 text-xs">
+                <span>🎯</span> Target Segmen
+              </button>
+            </div>
+
+            <div id="timeAttackContainer" class="flex items-center gap-1 flex-wrap mb-2">
+              <button class="time-btn px-2 py-0.5 rounded border border-cyan-500/30 bg-cyan-950/40 text-[10px] text-slate-200" data-sec="30">30s</button>
+              <button class="time-btn px-2 py-0.5 rounded border border-cyan-500/60 bg-cyan-500/20 text-[10px] text-cyan-200 font-bold" data-sec="60">1 Menit</button>
+              <button class="time-btn px-2 py-0.5 rounded border border-cyan-500/30 bg-cyan-950/40 text-[10px] text-slate-200" data-sec="120">2 Menit</button>
+              <button class="time-btn px-2 py-0.5 rounded border border-cyan-500/30 bg-cyan-950/40 text-[10px] text-slate-200" data-sec="180">3 Menit</button>
+            </div>
+
+            <div id="targetSegmentContainer" class="hidden items-center gap-1 flex-wrap mb-2">
+              <span class="text-[10px] text-slate-300">Target:</span>
+              <button class="target-btn px-2 py-0.5 rounded border border-yellow-500/30 bg-yellow-950/40 text-[10px] text-slate-200" data-target="20">20 Segs</button>
+              <button class="target-btn px-2 py-0.5 rounded border border-yellow-500/60 bg-yellow-500/20 text-[10px] text-yellow-200 font-bold" data-target="25">25 Segs</button>
+              <button class="target-btn px-2 py-0.5 rounded border border-yellow-500/30 bg-yellow-950/40 text-[10px] text-slate-200" data-target="30">30 Segs</button>
+            </div>
+
+            <!-- Display Scale & HP Joystick Position -->
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
+              <div>
+                <label class="block text-[10px] text-cyan-300 uppercase font-bold mb-0.5">Ukuran Layar (Fit):</label>
+                <select id="selectDisplayScale" class="w-full bg-slate-950 border border-cyan-500/50 text-cyan-300 rounded p-1 text-xs font-semibold">
+                  <option value="auto" selected>Auto Fit (HP / IFP)</option>
+                  <option value="0.75">75% (Kecilkan)</option>
+                  <option value="0.85">85% (Kompak)</option>
+                  <option value="0.90">90% (Sedang)</option>
+                  <option value="1.0">100% (Standar)</option>
+                  <option value="1.15">115% (Besar)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-300 uppercase font-bold mb-0.5">Posisi Tombol HP:</label>
+                <select id="selectPhoneJoyPos" class="w-full bg-slate-950 border border-slate-700 rounded p-1 text-slate-200 text-xs">
+                  <option value="left" selected>Joystick Kiri</option>
+                  <option value="right">Joystick Kanan</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Start Button -->
-      <div class="flex flex-col sm:flex-row items-center gap-3">
-        <button id="btnStartGame" class="w-full sm:flex-1 py-4 rounded-2xl font-orbitron font-black text-lg sm:text-xl tracking-wider text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-400 hover:brightness-110 active:scale-98 transition shadow-[0_0_25px_rgba(0,240,255,0.6)]">
-          ⚡ MULAI PERTANDINGAN ⚡
-        </button>
-        <button id="btnOpenHowTo" class="w-full sm:w-auto px-6 py-4 rounded-2xl font-orbitron font-bold text-xs sm:text-sm tracking-wider text-slate-300 glass-panel border border-slate-700 hover:bg-slate-800 active:scale-98 transition">
-          📖 CARA MAIN
-        </button>
-      </div>
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center gap-2">
+          <button id="btnStartGame" class="w-full sm:flex-1 py-3 rounded-2xl font-orbitron font-black text-base sm:text-lg tracking-wider text-slate-950 bg-gradient-to-r from-cyan-400 via-teal-300 to-cyan-400 hover:brightness-110 active:scale-98 transition shadow-[0_0_25px_rgba(0,240,255,0.6)]">
+            ⚡ MULAI PERTANDINGAN ⚡
+          </button>
+          <button id="btnOpenHowTo" class="w-full sm:w-auto px-5 py-3 rounded-2xl font-orbitron font-bold text-xs tracking-wider text-slate-300 glass-panel border border-slate-700 hover:bg-slate-800 active:scale-98 transition">
+            📖 CARA MAIN
+          </button>
+        </div>
 
+      </div>
     </div>
-  </div>
 
-  <!-- HOW TO PLAY MODAL -->
-  <div id="howToModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4">
-    <div class="glass-panel max-w-md w-full rounded-3xl p-6 border border-cyan-500/40 text-slate-200">
-      <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-        <h2 class="font-orbitron font-black text-lg text-cyan-300">CARA BERMAIN</h2>
-        <button id="btnCloseHowTo" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 text-sm font-bold">✕</button>
-      </div>
-      <div class="space-y-3 text-xs leading-relaxed text-slate-300">
-        <p>🎮 <strong class="text-white">Dua Pemain:</strong> Player 1 di kiri, Player 2 di kanan layar bersamaan dengan multitouch joystick atau keyboard.</p>
-        <p>🎯 <strong class="text-white">Aturan Gelembung Baru:</strong> Ada <b>2 gelembung jawaban benar</b> dan <b>3 gelembung salah</b>!</p>
-        <p>⏱️ <strong class="text-amber-400">Jeda 2 Detik:</strong> Saat salah satu pemain berhasil menjawab benar, lawan memiliki waktu 2 detik untuk mengambil gelembung benar kedua sebelum soal otomatis diganti.</p>
-        <p>✨ <strong class="text-emerald-400">Jawaban Benar:</strong> Tubuh ular bertambah +2 segmen. Streak 3x berturut-turut memberikan bonus ekstra +2 segmen!</p>
-        <p>💥 <strong class="text-rose-400">Jawaban Salah:</strong> Tubuh ular berkurang 1 segmen (panjang minimal 3).</p>
-      </div>
-      <button id="btnGotIt" class="mt-5 w-full py-3 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30">
-        MENGERTI, SIAP TANDING!
-      </button>
-    </div>
-  </div>
-
-  <!-- IN-GAME PAUSE MODAL -->
-  <div id="pauseModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md px-4">
-    <div class="glass-panel max-w-sm w-full rounded-3xl p-6 border border-cyan-500/40 text-center">
-      <h2 class="font-orbitron font-black text-2xl text-cyan-300 mb-2">GAME PAUSED</h2>
-      <p class="text-xs text-slate-300 mb-5">Pertandingan dijeda sejenak.</p>
-      <div class="flex flex-col gap-2.5">
-        <button id="btnResumeGame" class="py-3 rounded-xl font-orbitron font-bold text-sm bg-gradient-to-r from-cyan-400 to-teal-300 text-slate-950">
-          ▶️ LANJUTKAN
-        </button>
-        <button id="btnRestartRound" class="py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
-          🔄 ULANGI RONDE
-        </button>
-        <button id="btnQuitToMenu" class="py-2.5 rounded-xl font-orbitron font-bold text-xs bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40">
-          🏠 KEMBALI KE MENU
+    <!-- HOW TO PLAY MODAL -->
+    <div id="howToModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4 pointer-events-auto">
+      <div class="glass-panel max-w-md w-full rounded-3xl p-5 border border-cyan-500/40 text-slate-200">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+          <h2 class="font-orbitron font-black text-base text-cyan-300">CARA BERMAIN</h2>
+          <button id="btnCloseHowTo" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 text-xs font-bold">✕</button>
+        </div>
+        <div class="space-y-2 text-xs leading-relaxed text-slate-300">
+          <p>🤖 <strong class="text-white">Bisa Main di HP / Solo:</strong> Pilih mode <b>VS BOT</b> untuk bermain sendiri melawan komputer cerdas.</p>
+          <p>🎯 <strong class="text-white">Aturan Gelembung:</strong> Ada <b>2 gelembung benar</b> dan <b>3 gelembung salah</b>.</p>
+          <p>⏱️ <strong class="text-amber-400">Jeda Waktu 2 Detik:</strong> Jika salah satu berhasil memakan gelembung benar, ada waktu 2 detik bagi lawan untuk mengambil gelembung benar berikutnya!</p>
+          <p>📱 <strong class="text-cyan-300">Tips Layar HP:</strong> Putar HP ke posisi <b>Landscape</b> (tidur). Posisi joystick bisa diatur ke tangan kiri atau kanan.</p>
+        </div>
+        <button id="btnGotIt" class="mt-4 w-full py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30">
+          MENGERTI, SIAP MAIN!
         </button>
       </div>
     </div>
-  </div>
+
+    <!-- PAUSE MODAL -->
+    <div id="pauseModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/80 backdrop-blur-md px-4 pointer-events-auto">
+      <div class="glass-panel max-w-sm w-full rounded-3xl p-5 border border-cyan-500/40 text-center">
+        <h2 class="font-orbitron font-black text-xl text-cyan-300 mb-1">GAME PAUSED</h2>
+        <p class="text-xs text-slate-300 mb-4">Pertandingan dijeda sejenak.</p>
+        <div class="flex flex-col gap-2">
+          <button id="btnResumeGame" class="py-2.5 rounded-xl font-orbitron font-bold text-xs bg-gradient-to-r from-cyan-400 to-teal-300 text-slate-950">
+            ▶️ LANJUTKAN
+          </button>
+          <button id="btnRestartRound" class="py-2 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">
+            🔄 ULANGI RONDE
+          </button>
+          <button id="btnQuitToMenu" class="py-2 rounded-xl font-orbitron font-bold text-xs bg-rose-950/60 hover:bg-rose-900/60 text-rose-300 border border-rose-500/40">
+            🏠 KEMBALI KE MENU
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- VICTORY MODAL -->
+    <div id="victoryModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4 py-4 overflow-y-auto custom-scrollbar pointer-events-auto">
+      <div class="glass-panel max-w-xl w-full rounded-3xl p-5 border border-yellow-500/40 shadow-[0_0_60px_rgba(255,215,0,0.25)] text-center relative my-auto">
+        <div class="w-12 h-12 mx-auto mb-1.5 rounded-2xl bg-gradient-to-tr from-yellow-500 to-amber-200 flex items-center justify-center text-2xl shadow-[0_0_20px_#ffd700]">
+          🏆
+        </div>
+        <div id="winnerTextBadge" class="font-orbitron font-black text-2xl sm:text-3xl text-yellow-300 tracking-wider mb-1">
+          PLAYER 1 WINS!
+        </div>
+        <p id="winnerReason" class="text-xs text-slate-300 mb-4 font-semibold">Tumbuh menjadi cacing digital terpanjang!</p>
+
+        <div class="grid grid-cols-2 gap-2.5 mb-4 text-left">
+          <div id="victoryCardP1" class="p-3 rounded-2xl bg-slate-900/80 border">
+            <div class="font-orbitron font-bold text-xs mb-1.5 flex items-center justify-between">
+              <span id="statP1Name" class="truncate">PLAYER 1</span>
+              <span id="statP1Result" class="text-[9px] px-1.5 py-0.5 rounded font-bold">WINNER</span>
+            </div>
+            <div class="space-y-1 text-xs text-slate-300">
+              <div class="flex justify-between"><span>Panjang Akhir:</span> <b id="statP1Length" class="text-white font-mono">15 segs</b></div>
+              <div class="flex justify-between"><span>Benar:</span> <b id="statP1Correct" class="text-emerald-400 font-mono">8</b></div>
+              <div class="flex justify-between"><span>Salah:</span> <b id="statP1Wrong" class="text-rose-400 font-mono">1</b></div>
+              <div class="flex justify-between"><span>Akurasi:</span> <b id="statP1Accuracy" class="font-mono">88%</b></div>
+              <div class="flex justify-between"><span>Max Streak:</span> <b id="statP1Combo" class="text-yellow-400 font-mono">4x</b></div>
+            </div>
+          </div>
+
+          <div id="victoryCardP2" class="p-3 rounded-2xl bg-slate-900/80 border">
+            <div class="font-orbitron font-bold text-xs mb-1.5 flex items-center justify-between">
+              <span id="statP2Name" class="truncate">CYBER BOT</span>
+              <span id="statP2Result" class="text-[9px] px-1.5 py-0.5 rounded font-bold">RUNNER UP</span>
+            </div>
+            <div class="space-y-1 text-xs text-slate-300">
+              <div class="flex justify-between"><span>Panjang Akhir:</span> <b id="statP2Length" class="text-white font-mono">11 segs</b></div>
+              <div class="flex justify-between"><span>Benar:</span> <b id="statP2Correct" class="text-emerald-400 font-mono">5</b></div>
+              <div class="flex justify-between"><span>Salah:</span> <b id="statP2Wrong" class="text-rose-400 font-mono">2</b></div>
+              <div class="flex justify-between"><span>Akurasi:</span> <b id="statP2Accuracy" class="font-mono">71%</b></div>
+              <div class="flex justify-between"><span>Max Streak:</span> <b id="statP2Combo" class="text-yellow-400 font-mono">2x</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <button id="btnOpenReview" class="w-full py-2 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 flex items-center justify-center gap-2">
+            <span>📝</span> LIHAT RIWAYAT & PEMBAHASAN SOAL
+          </button>
+          <div class="grid grid-cols-2 gap-2 mt-1">
+            <button id="btnRematch" class="py-2.5 rounded-xl font-orbitron font-black text-xs bg-gradient-to-r from-yellow-400 to-amber-300 text-slate-950 hover:brightness-110 active:scale-98 transition shadow-[0_0_20px_rgba(255,215,0,0.4)]">
+              🔄 REMATCH
+            </button>
+            <button id="btnBackToMenu" class="py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700">
+              🏠 MENU UTAMA
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REVIEW MODAL -->
+    <div id="reviewModal" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4 py-4 pointer-events-auto">
+      <div class="glass-panel max-w-lg w-full rounded-3xl p-5 border border-cyan-500/40 text-slate-200 max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
+          <h3 class="font-orbitron font-black text-xs sm:text-sm text-cyan-300 flex items-center gap-2">
+            <span>📝</span> PEMBAHASAN SOAL RONDE INI
+          </h3>
+          <button id="btnCloseReview" class="w-6 h-6 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 text-xs font-bold">✕</button>
+        </div>
+        <div id="reviewList" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar text-xs"></div>
+        <button id="btnDismissReview" class="mt-3 w-full py-2 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700">
+          TUTUP PEMBAHASAN
+        </button>
+      </div>
+    </div>
+
+  </div> <!-- End #uiScaleContainer -->
 
   <!-- COUNTDOWN OVERLAY -->
-  <div id="countdownOverlay" class="absolute inset-0 z-20 pointer-events-none hidden flex items-center justify-center">
+  <div id="countdownOverlay" class="absolute inset-0 z-30 pointer-events-none hidden flex items-center justify-center">
     <div id="countdownNumber" class="font-orbitron font-black text-8xl sm:text-9xl text-cyan-300 drop-shadow-[0_0_35px_#00f0ff] animate-pulse">
       3
-    </div>
-  </div>
-
-  <!-- VICTORY & RESULTS SCREEN -->
-  <div id="victoryModal" class="absolute inset-0 z-40 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4 py-4 overflow-y-auto custom-scrollbar">
-    <div class="glass-panel max-w-xl w-full rounded-3xl p-5 sm:p-7 border border-yellow-500/40 shadow-[0_0_60px_rgba(255,215,0,0.25)] text-center relative my-auto">
-      <div class="w-14 h-14 mx-auto mb-2 rounded-2xl bg-gradient-to-tr from-yellow-500 to-amber-200 flex items-center justify-center text-3xl shadow-[0_0_20px_#ffd700]">
-        🏆
-      </div>
-      <div id="winnerTextBadge" class="font-orbitron font-black text-2xl sm:text-3xl text-yellow-300 tracking-wider mb-1">
-        PLAYER 1 WINS!
-      </div>
-      <p id="winnerReason" class="text-xs text-slate-300 mb-5 font-semibold">Tumbuh menjadi cacing digital terpanjang!</p>
-
-      <div class="grid grid-cols-2 gap-3 mb-5 text-left">
-        <div id="victoryCardP1" class="p-3.5 rounded-2xl bg-slate-900/80 border">
-          <div class="font-orbitron font-bold text-xs mb-2 flex items-center justify-between">
-            <span id="statP1Name" class="truncate">PLAYER 1</span>
-            <span id="statP1Result" class="text-[10px] px-1.5 py-0.5 rounded font-bold">WINNER</span>
-          </div>
-          <div class="space-y-1 text-xs text-slate-300">
-            <div class="flex justify-between"><span>Panjang Akhir:</span> <b id="statP1Length" class="text-white font-mono">15 segs</b></div>
-            <div class="flex justify-between"><span>Benar:</span> <b id="statP1Correct" class="text-emerald-400 font-mono">8</b></div>
-            <div class="flex justify-between"><span>Salah:</span> <b id="statP1Wrong" class="text-rose-400 font-mono">1</b></div>
-            <div class="flex justify-between"><span>Akurasi:</span> <b id="statP1Accuracy" class="font-mono">88%</b></div>
-            <div class="flex justify-between"><span>Max Streak:</span> <b id="statP1Combo" class="text-yellow-400 font-mono">4x</b></div>
-          </div>
-        </div>
-
-        <div id="victoryCardP2" class="p-3.5 rounded-2xl bg-slate-900/80 border">
-          <div class="font-orbitron font-bold text-xs mb-2 flex items-center justify-between">
-            <span id="statP2Name" class="truncate">PLAYER 2</span>
-            <span id="statP2Result" class="text-[10px] px-1.5 py-0.5 rounded font-bold">RUNNER UP</span>
-          </div>
-          <div class="space-y-1 text-xs text-slate-300">
-            <div class="flex justify-between"><span>Panjang Akhir:</span> <b id="statP2Length" class="text-white font-mono">11 segs</b></div>
-            <div class="flex justify-between"><span>Benar:</span> <b id="statP2Correct" class="text-emerald-400 font-mono">5</b></div>
-            <div class="flex justify-between"><span>Salah:</span> <b id="statP2Wrong" class="text-rose-400 font-mono">2</b></div>
-            <div class="flex justify-between"><span>Akurasi:</span> <b id="statP2Accuracy" class="font-mono">71%</b></div>
-            <div class="flex justify-between"><span>Max Streak:</span> <b id="statP2Combo" class="text-yellow-400 font-mono">2x</b></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-col gap-2">
-        <button id="btnOpenReview" class="w-full py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 flex items-center justify-center gap-2">
-          <span>📝</span> LIHAT RIWAYAT & PEMBAHASAN SOAL
-        </button>
-        <div class="grid grid-cols-2 gap-2 mt-1">
-          <button id="btnRematch" class="py-3 rounded-xl font-orbitron font-black text-sm bg-gradient-to-r from-yellow-400 to-amber-300 text-slate-950 hover:brightness-110 active:scale-98 transition shadow-[0_0_20px_rgba(255,215,0,0.4)]">
-            🔄 REMATCH
-          </button>
-          <button id="btnBackToMenu" class="py-3 rounded-xl font-orbitron font-bold text-sm bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700">
-            🏠 MENU UTAMA
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- QUESTION HISTORY MODAL -->
-  <div id="reviewModal" class="absolute inset-0 z-50 hidden flex items-center justify-center bg-slate-950/90 backdrop-blur-md px-4 py-6">
-    <div class="glass-panel max-w-lg w-full rounded-3xl p-6 border border-cyan-500/40 text-slate-200 max-h-[85vh] flex flex-col">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-3">
-        <h3 class="font-orbitron font-black text-sm text-cyan-300 flex items-center gap-2">
-          <span>📝</span> PEMBAHASAN SOAL RONDE INI
-        </h3>
-        <button id="btnCloseReview" class="w-7 h-7 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 text-xs font-bold">✕</button>
-      </div>
-
-      <div id="reviewList" class="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar text-xs"></div>
-
-      <button id="btnDismissReview" class="mt-4 w-full py-2.5 rounded-xl font-orbitron font-bold text-xs bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700">
-        TUTUP PEMBAHASAN
-      </button>
     </div>
   </div>
 
@@ -432,6 +481,7 @@
   <script>
     /**
      * CYBER WORM: MATH BATTLE by si_momon
+     * Dual Mode: 2-Player Local & VS Computer AI
      */
 
     const SKINS = {
@@ -569,7 +619,13 @@
       joySize: 'md',
       segmentRadius: 18,
       headRadius: 23,
-      bubbleRadius: 36
+      bubbleRadius: 36,
+      scaleMode: 'auto',
+      effectiveScale: 1.0,
+      // BOT AI & Phone configs
+      opponentType: 'bot', // 'bot' or 'pvp'
+      botDifficulty: 'normal', // 'easy', 'normal', 'hard'
+      phoneJoyPos: 'left' // 'left' or 'right'
     };
 
     const GameState = {
@@ -586,20 +642,20 @@
     let lastChanceActive = false;
     let countdownVal = 3;
 
-    // Grace Period System: 2 Detik kesempatan bagi lawan
     let graceTimer = null;
     let graceTimeRemaining = 0;
     let graceInterval = null;
 
-    let p1Config = { name: "Player 1", skinKey: 'blue' };
-    let p2Config = { name: "Player 2", skinKey: 'red' };
+    let p1Config = { name: "Cyber Blue", skinKey: 'blue' };
+    let p2Config = { name: "Cyber Bot", skinKey: 'red', isBot: true };
 
     let roundQuestionsHistory = [];
     let currentQuestion = null;
     let previousQuestionsKeys = [];
 
+    // --- CYBER WORM CLASS ---
     class CyberWorm {
-      constructor(id, name, skinKey, startX, startY, angle) {
+      constructor(id, name, skinKey, startX, startY, angle, isBot = false) {
         this.id = id;
         this.name = name;
         this.skinKey = skinKey;
@@ -609,6 +665,7 @@
         this.speed = CONFIG.wormSpeed;
         this.targetCount = CONFIG.initialSegments;
         this.segments = [];
+        this.isBot = isBot;
 
         const spacing = CONFIG.segmentRadius * 1.35;
         for (let i = 0; i < this.targetCount; i++) {
@@ -624,6 +681,11 @@
         this.stats = { correct: 0, wrong: 0, combo: 0, maxCombo: 0 };
         this.squirmPhase = Math.random() * Math.PI * 2;
         this.statusBadge = null;
+
+        // Bot AI states
+        this.botTargetBubble = null;
+        this.botThinkTimer = 0;
+        this.botReactionDelay = 0;
       }
 
       addSegments(num) {
@@ -641,6 +703,54 @@
         }
       }
 
+      updateAI(bubbles) {
+        if (!this.isBot || this.hasAnsweredCurrent) return;
+
+        this.botThinkTimer++;
+        if (this.botThinkTimer % 12 === 0 || !this.botTargetBubble || !this.botTargetBubble.alive) {
+          const aliveBubbles = bubbles.filter(b => b.alive);
+          if (aliveBubbles.length === 0) return;
+
+          // AI Decision based on difficulty
+          let chooseCorrect = true;
+          let speedFactor = 1.0;
+
+          if (CONFIG.botDifficulty === 'easy') {
+            chooseCorrect = Math.random() < 0.55;
+            speedFactor = 0.85;
+          } else if (CONFIG.botDifficulty === 'normal') {
+            chooseCorrect = Math.random() < 0.80;
+            speedFactor = 1.0;
+          } else { // Hard / Cyber Master
+            chooseCorrect = Math.random() < 0.95;
+            speedFactor = 1.15;
+          }
+
+          this.speed = CONFIG.wormSpeed * speedFactor;
+
+          const candidates = aliveBubbles.filter(b => b.isCorrect === chooseCorrect);
+          const pool = candidates.length > 0 ? candidates : aliveBubbles;
+
+          // Cari yang terdekat
+          let best = pool[0];
+          let minDist = Infinity;
+          for (let b of pool) {
+            const d = Math.hypot(b.x - this.x, b.y - this.y);
+            if (d < minDist) {
+              minDist = d;
+              best = b;
+            }
+          }
+          this.botTargetBubble = best;
+        }
+
+        if (this.botTargetBubble) {
+          const dx = this.botTargetBubble.x - this.x;
+          const dy = this.botTargetBubble.y - this.y;
+          this.inputVector = { x: dx, y: dy };
+        }
+      }
+
       update(arenaWidth, arenaHeight) {
         this.squirmPhase += 0.12;
 
@@ -650,7 +760,7 @@
           let diff = targetAngle - this.angle;
           while (diff < -Math.PI) diff += Math.PI * 2;
           while (diff > Math.PI) diff -= Math.PI * 2;
-          this.angle += diff * 0.18;
+          this.angle += diff * (this.isBot ? 0.14 : 0.18);
         }
 
         const squirmOffset = Math.sin(this.squirmPhase) * 0.35;
@@ -771,6 +881,7 @@
           ctx.fill();
         });
 
+        // Visor / Forehead Node
         const antX = this.x + Math.cos(this.angle) * (hRadius * 0.9);
         const antY = this.y + Math.sin(this.angle) * (hRadius * 0.9);
         ctx.beginPath();
@@ -890,8 +1001,11 @@
       }
     }
 
+    // --- CANVAS & SCREEN CALIBRATION ---
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+    const uiContainer = document.getElementById('uiScaleContainer');
+
     let wormP1 = null;
     let wormP2 = null;
     let bubbles = [];
@@ -899,14 +1013,47 @@
     let floatingTexts = [];
     let ambientParticles = [];
 
+    function updateDisplayScaling() {
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+
+      let targetScale = 1.0;
+      if (CONFIG.scaleMode === 'auto') {
+        const baseW = 1280;
+        const baseH = 720;
+        const scaleX = winW / baseW;
+        const scaleY = winH / baseH;
+        targetScale = Math.min(scaleX, scaleY);
+        // Mendukung layar HP (bisa mengecil hingga 65% bila viewport sempit)
+        targetScale = Math.max(0.65, Math.min(targetScale, 1.15));
+      } else {
+        targetScale = parseFloat(CONFIG.scaleMode) || 1.0;
+      }
+
+      CONFIG.effectiveScale = targetScale;
+      uiContainer.style.transform = `scale(${targetScale})`;
+      uiContainer.style.width = `${100 / targetScale}%`;
+      uiContainer.style.height = `${100 / targetScale}%`;
+      uiContainer.style.left = `${(100 - (100 / targetScale)) / 2}%`;
+      uiContainer.style.top = `${(100 - (100 / targetScale)) / 2}%`;
+
+      document.getElementById('quickZoomLabel').innerText = `${Math.round(targetScale * 100)}%`;
+    }
+
     function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
+
+      updateDisplayScaling();
+
       ambientParticles = [];
       for (let i = 0; i < 40; i++) {
         ambientParticles.push({
-          x: Math.random() * canvas.width,
-          y: Math.random() * canvas.height,
+          x: Math.random() * window.innerWidth,
+          y: Math.random() * window.innerHeight,
           radius: Math.random() * 1.8 + 0.5,
           vx: (Math.random() - 0.5) * 0.4,
           vy: (Math.random() - 0.5) * 0.4,
@@ -916,7 +1063,7 @@
     }
     window.addEventListener('resize', resizeCanvas);
 
-    // --- SOAL ENGINE (2 JAWABAN BENAR + 3 SALAH = 5 GELEMBUNG) ---
+    // --- QUESTION GENERATION (2 BENAR & 3 SALAH) ---
     function generateQuestion() {
       clearGracePeriod();
 
@@ -951,7 +1098,6 @@
       previousQuestionsKeys.push(key);
       if (previousQuestionsKeys.length > 6) previousQuestionsKeys.shift();
 
-      // Buat 3 distraktor unik yang bukan jawaban benar
       const distractorsSet = new Set();
       const potential = [
         answer + a, answer - a, answer + b, answer - b,
@@ -975,7 +1121,6 @@
         if (cand > 0 && cand !== answer) distractorsSet.add(cand);
       }
 
-      // Daftar 5 bubble: 2 benar + 3 salah
       const bubbleItems = [
         { value: answer, isCorrect: true },
         { value: answer, isCorrect: true }
@@ -985,7 +1130,6 @@
         bubbleItems.push({ value: val, isCorrect: false });
       });
 
-      // Acak urutan posisi 5 gelembung
       for (let i = bubbleItems.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [bubbleItems[i], bubbleItems[j]] = [bubbleItems[j], bubbleItems[i]];
@@ -1008,11 +1152,14 @@
 
     function spawnAnswerBubbles() {
       bubbles = [];
-      const safeMarginX = Math.min(200, canvas.width * 0.18);
+      const arenaW = window.innerWidth;
+      const arenaH = window.innerHeight;
+
+      const safeMarginX = Math.min(220, arenaW * 0.18);
       const minX = safeMarginX;
-      const maxX = canvas.width - safeMarginX;
+      const maxX = arenaW - safeMarginX;
       const minY = 145;
-      const maxY = canvas.height - 180;
+      const maxY = arenaH - 180;
       const coords = [];
 
       for (let i = 0; i < currentQuestion.bubbleItems.length; i++) {
@@ -1037,16 +1184,15 @@
       }
     }
 
-    // --- GRACE PERIOD TIMER LOGIC (2 DETIK UNTUK LAWAN) ---
+    // --- GRACE PERIOD TIMER LOGIC (2 DETIK) ---
     function triggerGracePeriod() {
-      // Hanya picu jika salah satu belum menjawab
       if (wormP1.hasAnsweredCurrent && wormP2.hasAnsweredCurrent) {
         clearGracePeriod();
         setTimeout(advanceNextQuestion, 400);
         return;
       }
 
-      if (graceTimer !== null) return; // Sudah berjalan
+      if (graceTimer !== null) return;
 
       const banner = document.getElementById('gracePeriodBanner');
       const timeTxt = document.getElementById('graceSecondsText');
@@ -1084,39 +1230,31 @@
       if (banner) banner.classList.add('hidden');
     }
 
-    // --- MULTITOUCH JOYSTICKS ---
+    // --- TOUCH JOYSTICKS ---
     let touchTrackP1 = null;
     let touchTrackP2 = null;
 
     const joyZoneP1 = document.getElementById('joystickZoneP1');
     const joyStickP1 = document.getElementById('joyStickP1');
-    const joyBaseP1 = document.getElementById('joyBaseP1');
-
     const joyZoneP2 = document.getElementById('joystickZoneP2');
     const joyStickP2 = document.getElementById('joyStickP2');
-    const joyBaseP2 = document.getElementById('joyBaseP2');
 
     let maxJoyRadius = 45;
 
-    function applyJoystickSizing() {
-      if (CONFIG.joySize === 'sm') {
-        maxJoyRadius = 35;
-        joyBaseP1.style.width = '100px'; joyBaseP1.style.height = '100px';
-        joyBaseP2.style.width = '100px'; joyBaseP2.style.height = '100px';
-        joyStickP1.style.width = '42px'; joyStickP1.style.height = '42px';
-        joyStickP2.style.width = '42px'; joyStickP2.style.height = '42px';
-      } else if (CONFIG.joySize === 'lg') {
-        maxJoyRadius = 55;
-        joyBaseP1.style.width = '150px'; joyBaseP1.style.height = '150px';
-        joyBaseP2.style.width = '150px'; joyBaseP2.style.height = '150px';
-        joyStickP1.style.width = '64px'; joyStickP1.style.height = '64px';
-        joyStickP2.style.width = '64px'; joyStickP2.style.height = '64px';
+    function applyPhoneControlsLayout() {
+      if (CONFIG.opponentType === 'bot') {
+        joyZoneP2.classList.add('hidden'); // Sembunyikan joystick P2 saat lawan komputer
+        if (CONFIG.phoneJoyPos === 'right') {
+          joyZoneP1.style.left = 'auto';
+          joyZoneP1.style.right = '1rem';
+        } else {
+          joyZoneP1.style.left = '1rem';
+          joyZoneP1.style.right = 'auto';
+        }
       } else {
-        maxJoyRadius = 45;
-        joyBaseP1.style.width = '128px'; joyBaseP1.style.height = '128px';
-        joyBaseP2.style.width = '128px'; joyBaseP2.style.height = '128px';
-        joyStickP1.style.width = '56px'; joyStickP1.style.height = '56px';
-        joyStickP2.style.width = '56px'; joyStickP2.style.height = '56px';
+        joyZoneP2.classList.remove('hidden');
+        joyZoneP1.style.left = '1rem';
+        joyZoneP1.style.right = 'auto';
       }
     }
 
@@ -1126,14 +1264,24 @@
         const touch = e.changedTouches[i];
         const screenMid = window.innerWidth / 2;
 
-        if (touch.clientX < screenMid && touchTrackP1 === null) {
-          const rect = joyZoneP1.getBoundingClientRect();
-          touchTrackP1 = { id: touch.identifier, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
-          joyStickP1.style.transform = `translate(0px, 0px)`;
-        } else if (touch.clientX >= screenMid && touchTrackP2 === null) {
-          const rect = joyZoneP2.getBoundingClientRect();
-          touchTrackP2 = { id: touch.identifier, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
-          joyStickP2.style.transform = `translate(0px, 0px)`;
+        if (CONFIG.opponentType === 'bot') {
+          // Hanya ada P1
+          if (touchTrackP1 === null) {
+            const rect = joyZoneP1.getBoundingClientRect();
+            touchTrackP1 = { id: touch.identifier, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
+            joyStickP1.style.transform = `translate(0px, 0px)`;
+          }
+        } else {
+          // 2 Pemain PvP
+          if (touch.clientX < screenMid && touchTrackP1 === null) {
+            const rect = joyZoneP1.getBoundingClientRect();
+            touchTrackP1 = { id: touch.identifier, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
+            joyStickP1.style.transform = `translate(0px, 0px)`;
+          } else if (touch.clientX >= screenMid && touchTrackP2 === null) {
+            const rect = joyZoneP2.getBoundingClientRect();
+            touchTrackP2 = { id: touch.identifier, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
+            joyStickP2.style.transform = `translate(0px, 0px)`;
+          }
         }
       }
     }
@@ -1142,16 +1290,16 @@
       for (let i = 0; i < e.changedTouches.length; i++) {
         const touch = e.changedTouches[i];
         if (touchTrackP1 && touch.identifier === touchTrackP1.id) {
-          const dx = touch.clientX - touchTrackP1.originX;
-          const dy = touch.clientY - touchTrackP1.originY;
+          const dx = (touch.clientX - touchTrackP1.originX) / CONFIG.effectiveScale;
+          const dy = (touch.clientY - touchTrackP1.originY) / CONFIG.effectiveScale;
           const dist = Math.hypot(dx, dy);
           const clamped = Math.min(dist, maxJoyRadius);
           const angle = Math.atan2(dy, dx);
           joyStickP1.style.transform = `translate(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px)`;
           if (wormP1 && dist > 5) wormP1.inputVector = { x: Math.cos(angle), y: Math.sin(angle) };
-        } else if (touchTrackP2 && touch.identifier === touchTrackP2.id) {
-          const dx = touch.clientX - touchTrackP2.originX;
-          const dy = touch.clientY - touchTrackP2.originY;
+        } else if (touchTrackP2 && touch.identifier === touchTrackP2.id && CONFIG.opponentType === 'pvp') {
+          const dx = (touch.clientX - touchTrackP2.originX) / CONFIG.effectiveScale;
+          const dy = (touch.clientY - touchTrackP2.originY) / CONFIG.effectiveScale;
           const dist = Math.hypot(dx, dy);
           const clamped = Math.min(dist, maxJoyRadius);
           const angle = Math.atan2(dy, dx);
@@ -1192,23 +1340,25 @@
     });
 
     function updateKeyboardVectors() {
-      if (!wormP1 || !wormP2) return;
+      if (!wormP1) return;
       let p1X = 0, p1Y = 0;
-      if (keysPressed['w']) p1Y -= 1;
-      if (keysPressed['s']) p1Y += 1;
-      if (keysPressed['a']) p1X -= 1;
-      if (keysPressed['d']) p1X += 1;
+      if (keysPressed['w'] || keysPressed['arrowup']) p1Y -= 1;
+      if (keysPressed['s'] || keysPressed['arrowdown']) p1Y += 1;
+      if (keysPressed['a'] || keysPressed['arrowleft']) p1X -= 1;
+      if (keysPressed['d'] || keysPressed['arrowright']) p1X += 1;
       if (p1X !== 0 || p1Y !== 0) wormP1.inputVector = { x: p1X, y: p1Y };
 
-      let p2X = 0, p2Y = 0;
-      if (keysPressed['arrowup']) p2Y -= 1;
-      if (keysPressed['arrowdown']) p2Y += 1;
-      if (keysPressed['arrowleft']) p2X -= 1;
-      if (keysPressed['arrowright']) p2X += 1;
-      if (p2X !== 0 || p2Y !== 0) wormP2.inputVector = { x: p2X, y: p2Y };
+      if (CONFIG.opponentType === 'pvp' && wormP2) {
+        let p2X = 0, p2Y = 0;
+        if (keysPressed['arrowup']) p2Y -= 1;
+        if (keysPressed['arrowdown']) p2Y += 1;
+        if (keysPressed['arrowleft']) p2X -= 1;
+        if (keysPressed['arrowright']) p2X += 1;
+        if (p2X !== 0 || p2Y !== 0) wormP2.inputVector = { x: p2X, y: p2Y };
+      }
     }
 
-    // --- COLLISION LOGIC DENGAN ATURAN 2 DETIK ---
+    // --- COLLISION LOGIC ---
     function checkCollisions(worm) {
       if (worm.hasAnsweredCurrent) return;
 
@@ -1254,7 +1404,6 @@
               return;
             }
 
-            // Jika satu pemain benar, berikan kesempatan 2 detik untuk lawan
             triggerGracePeriod();
           } else {
             worm.stats.wrong++;
@@ -1269,7 +1418,6 @@
               particles.push(new Particle(b.x, b.y, '#ff0055', 1.0));
             }
 
-            // Jika kedua pemain sudah menjawab (misal keduanya salah)
             if (wormP1.hasAnsweredCurrent && wormP2.hasAnsweredCurrent) {
               clearGracePeriod();
               setTimeout(advanceNextQuestion, 500);
@@ -1278,7 +1426,6 @@
 
           updateScoreHUD();
 
-          // Jika setelah tabrakan ini kedua pemain sudah tuntas menjawab
           if (wormP1.hasAnsweredCurrent && wormP2.hasAnsweredCurrent) {
             clearGracePeriod();
             setTimeout(advanceNextQuestion, 400);
@@ -1315,23 +1462,26 @@
     }
 
     function drawCyberArena() {
+      const arenaW = window.innerWidth;
+      const arenaH = window.innerHeight;
       const gridSpacing = 45;
+
       ctx.lineWidth = 1;
       ctx.strokeStyle = lastChanceActive ? 'rgba(255, 0, 50, 0.15)' : 'rgba(0, 240, 255, 0.07)';
 
-      for (let x = 0; x < canvas.width; x += gridSpacing) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+      for (let x = 0; x < arenaW; x += gridSpacing) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, arenaH); ctx.stroke();
       }
-      for (let y = 0; y < canvas.height; y += gridSpacing) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+      for (let y = 0; y < arenaH; y += gridSpacing) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(arenaW, y); ctx.stroke();
       }
 
       ambientParticles.forEach(p => {
         p.x += p.vx; p.y += p.vy;
-        if (p.x < 0) p.x = canvas.width;
-        if (p.x > canvas.width) p.x = 0;
-        if (p.y < 0) p.y = canvas.height;
-        if (p.y > canvas.height) p.y = 0;
+        if (p.x < 0) p.x = arenaW;
+        if (p.x > arenaW) p.x = 0;
+        if (p.y < 0) p.y = arenaH;
+        if (p.y > arenaH) p.y = 0;
 
         ctx.fillStyle = lastChanceActive ? `rgba(255, 60, 60, ${p.alpha})` : `rgba(0, 240, 255, ${p.alpha})`;
         ctx.beginPath();
@@ -1345,25 +1495,33 @@
       ctx.strokeStyle = lastChanceActive ? '#ff0044' : '#00f0ff';
       ctx.shadowBlur = lastChanceActive ? 25 : 15;
       ctx.shadowColor = lastChanceActive ? '#ff0000' : '#00f0ff';
-      ctx.strokeRect(pad, pad, canvas.width - pad * 2, canvas.height - pad * 2);
+      ctx.strokeRect(pad, pad, arenaW - pad * 2, arenaH - pad * 2);
 
       const cLen = 28;
       ctx.beginPath(); ctx.moveTo(pad, pad + cLen); ctx.lineTo(pad, pad); ctx.lineTo(pad + cLen, pad); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(canvas.width - pad - cLen, pad); ctx.lineTo(canvas.width - pad, pad); ctx.lineTo(canvas.width - pad, pad + cLen); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(pad, canvas.height - pad - cLen); ctx.lineTo(pad, canvas.height - pad); ctx.lineTo(pad + cLen, canvas.height - pad); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(canvas.width - pad - cLen, canvas.height - pad); ctx.lineTo(canvas.width - pad, canvas.height - pad); ctx.lineTo(canvas.width - pad, canvas.height - pad - cLen); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(arenaW - pad - cLen, pad); ctx.lineTo(arenaW - pad, pad); ctx.lineTo(arenaW - pad, pad + cLen); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(pad, arenaH - pad - cLen); ctx.lineTo(pad, arenaH - pad); ctx.lineTo(pad + cLen, arenaH - pad); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(arenaW - pad - cLen, arenaH - pad); ctx.lineTo(arenaW - pad, arenaH - pad); ctx.lineTo(arenaW - pad, arenaH - pad - cLen); ctx.stroke();
       ctx.restore();
     }
 
     function gameLoop() {
+      const arenaW = window.innerWidth;
+      const arenaH = window.innerHeight;
+
       ctx.fillStyle = '#030712';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, arenaW, arenaH);
 
       drawCyberArena();
 
       if (currentState === GameState.PLAYING) {
-        wormP1.update(canvas.width, canvas.height);
-        wormP2.update(canvas.width, canvas.height);
+        wormP1.update(arenaW, arenaH);
+        
+        // Update Bot AI if enabled
+        if (wormP2 && wormP2.isBot) {
+          wormP2.updateAI(bubbles);
+        }
+        wormP2.update(arenaW, arenaH);
 
         checkCollisions(wormP1);
         checkCollisions(wormP2);
@@ -1399,7 +1557,7 @@
       previousQuestionsKeys = [];
       clearGracePeriod();
 
-      applyJoystickSizing();
+      applyPhoneControlsLayout();
 
       const skin1 = SKINS[p1Config.skinKey] || SKINS.blue;
       const skin2 = SKINS[p2Config.skinKey] || SKINS.red;
@@ -1413,7 +1571,8 @@
       document.getElementById('joyStickP1').style.background = skin1.hex;
       document.getElementById('hintP1').style.color = skin1.hex;
 
-      document.getElementById('p2HudName').innerText = p2Config.name.toUpperCase();
+      const p2DisplayName = CONFIG.opponentType === 'bot' ? `BOT (${CONFIG.botDifficulty.toUpperCase()})` : p2Config.name.toUpperCase();
+      document.getElementById('p2HudName').innerText = p2DisplayName;
       document.getElementById('p2HudName').className = `text-xs uppercase tracking-wider font-bold truncate ${skin2.textClass}`;
       document.getElementById('p2HudCard').style.borderColor = skin2.hex;
       document.getElementById('p2HudAvatar').style.borderColor = skin2.hex;
@@ -1437,9 +1596,10 @@
         document.getElementById('modeIcon').innerText = '⏱️';
       }
 
-      const centerY = canvas.height / 2;
-      wormP1 = new CyberWorm(1, p1Config.name, p1Config.skinKey, canvas.width * 0.22, centerY, 0);
-      wormP2 = new CyberWorm(2, p2Config.name, p2Config.skinKey, canvas.width * 0.78, centerY, Math.PI);
+      const centerY = window.innerHeight / 2;
+      wormP1 = new CyberWorm(1, p1Config.name, p1Config.skinKey, window.innerWidth * 0.22, centerY, 0, false);
+      const isBotOpponent = CONFIG.opponentType === 'bot';
+      wormP2 = new CyberWorm(2, p2DisplayName, p2Config.skinKey, window.innerWidth * 0.78, centerY, Math.PI, isBotOpponent);
 
       particles = [];
       floatingTexts = [];
@@ -1523,13 +1683,15 @@
       let winner = 0;
       let reason = "";
 
+      const p2DisplayName = wormP2.name;
+
       if (CONFIG.gameMode === 'target') {
         if (p1Len >= CONFIG.targetSegments && p2Len < CONFIG.targetSegments) {
           winner = 1;
           reason = `${p1Config.name} pertama kali mencapai target ${CONFIG.targetSegments} segmen!`;
         } else if (p2Len >= CONFIG.targetSegments && p1Len < CONFIG.targetSegments) {
           winner = 2;
-          reason = `${p2Config.name} pertama kali mencapai target ${CONFIG.targetSegments} segmen!`;
+          reason = `${p2DisplayName} pertama kali mencapai target ${CONFIG.targetSegments} segmen!`;
         }
       }
 
@@ -1539,25 +1701,17 @@
           reason = `${p1Config.name} unggul dengan total ${p1Len} segmen!`;
         } else if (p2Len > p1Len) {
           winner = 2;
-          reason = `${p2Config.name} unggul dengan total ${p2Len} segmen!`;
+          reason = `${p2DisplayName} unggul dengan total ${p2Len} segmen!`;
         } else {
           if (wormP1.stats.correct > wormP2.stats.correct) {
             winner = 1;
-            reason = `Segmen seri, ${p1Config.name} menang melalui jumlah jawaban benar (${wormP1.stats.correct} vs ${wormP2.stats.correct})!`;
+            reason = `Segmen seri, ${p1Config.name} menang melalui jawaban benar terbanyak!`;
           } else if (wormP2.stats.correct > wormP1.stats.correct) {
             winner = 2;
-            reason = `Segmen seri, ${p2Config.name} menang melalui jumlah jawaban benar (${wormP2.stats.correct} vs ${wormP1.stats.correct})!`;
+            reason = `Segmen seri, ${p2DisplayName} menang melalui jawaban benar terbanyak!`;
           } else {
-            if (wormP1.stats.wrong < wormP2.stats.wrong) {
-              winner = 1;
-              reason = `Seri, ${p1Config.name} lebih unggul dengan kesalahan lebih sedikit!`;
-            } else if (wormP2.stats.wrong < wormP1.stats.wrong) {
-              winner = 2;
-              reason = `Seri, ${p2Config.name} lebih unggul dengan kesalahan lebih sedikit!`;
-            } else {
-              winner = 0;
-              reason = `Pertarungan seimbang sempurna! Keduanya pantas menjadi juara.`;
-            }
+            winner = 0;
+            reason = `Pertarungan seimbang sempurna!`;
           }
         }
       }
@@ -1568,24 +1722,24 @@
       const skin2 = SKINS[p2Config.skinKey];
 
       document.getElementById('statP1Name').innerText = p1Config.name.toUpperCase();
-      document.getElementById('statP2Name').innerText = p2Config.name.toUpperCase();
+      document.getElementById('statP2Name').innerText = p2DisplayName.toUpperCase();
       document.getElementById('victoryCardP1').style.borderColor = skin1.hex;
       document.getElementById('victoryCardP2').style.borderColor = skin2.hex;
 
       if (winner === 1) {
-        winnerBadge.innerText = `${p1Config.name.toUpperCase()} WINS!`;
+        winnerBadge.innerText = `${p1Config.name.toUpperCase()} MENANG!`;
         winnerBadge.style.color = skin1.hex;
         document.getElementById('statP1Result').innerText = "WINNER 🏆";
-        document.getElementById('statP1Result').className = "text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
+        document.getElementById('statP1Result').className = "text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
         document.getElementById('statP2Result').innerText = "RUNNER UP";
-        document.getElementById('statP2Result').className = "text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400";
+        document.getElementById('statP2Result').className = "text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400";
       } else if (winner === 2) {
-        winnerBadge.innerText = `${p2Config.name.toUpperCase()} WINS!`;
+        winnerBadge.innerText = `${p2DisplayName.toUpperCase()} MENANG!`;
         winnerBadge.style.color = skin2.hex;
         document.getElementById('statP2Result').innerText = "WINNER 🏆";
-        document.getElementById('statP2Result').className = "text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
+        document.getElementById('statP2Result').className = "text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold";
         document.getElementById('statP1Result').innerText = "RUNNER UP";
-        document.getElementById('statP1Result').className = "text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400";
+        document.getElementById('statP1Result').className = "text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400";
       } else {
         winnerBadge.innerText = "IT'S A DRAW! (SERI)";
         winnerBadge.style.color = "#ffd700";
@@ -1610,7 +1764,7 @@
       document.getElementById('statP2Combo').innerText = `${wormP2.stats.maxCombo}x`;
 
       for (let i = 0; i < 40; i++) {
-        particles.push(new Particle(canvas.width / 2, canvas.height / 2, Math.random() > 0.5 ? skin1.hex : skin2.hex, 2.5));
+        particles.push(new Particle(window.innerWidth / 2, window.innerHeight / 2, Math.random() > 0.5 ? skin1.hex : skin2.hex, 2.5));
       }
 
       document.getElementById('victoryModal').classList.remove('hidden');
@@ -1633,6 +1787,7 @@
           ? (q.p1Answered.correct ? `<span class="text-emerald-400 font-bold">✓ Benar (${q.p1Answered.choice})</span>` : `<span class="text-rose-400 font-bold">✗ Salah (${q.p1Answered.choice})</span>`)
           : `<span class="text-slate-500 font-mono">Waktu Habis / Lewat</span>`;
 
+        const p2Name = CONFIG.opponentType === 'bot' ? 'Cyber Bot' : p2Config.name;
         const p2Status = q.p2Answered 
           ? (q.p2Answered.correct ? `<span class="text-emerald-400 font-bold">✓ Benar (${q.p2Answered.choice})</span>` : `<span class="text-rose-400 font-bold">✗ Salah (${q.p2Answered.choice})</span>`)
           : `<span class="text-slate-500 font-mono">Waktu Habis / Lewat</span>`;
@@ -1644,7 +1799,7 @@
           </div>
           <div class="grid grid-cols-2 gap-2 text-[11px] pt-1 border-t border-slate-800/80">
             <div><span class="text-slate-400">${p1Config.name}:</span> ${p1Status}</div>
-            <div><span class="text-slate-400">${p2Config.name}:</span> ${p2Status}</div>
+            <div><span class="text-slate-400">${p2Name}:</span> ${p2Status}</div>
           </div>
         `;
         container.appendChild(item);
@@ -1662,14 +1817,14 @@
       const skin = SKINS[skinKey] || SKINS.blue;
 
       const segments = 5;
-      const segRadius = 14;
-      const headRadius = 18;
-      const startX = w - 60;
+      const segRadius = 13;
+      const headRadius = 17;
+      const startX = w - 55;
       const centerY = h / 2;
 
       for (let i = segments - 1; i >= 0; i--) {
-        const segX = startX - i * 20;
-        const segY = centerY + Math.sin(i * 0.9) * 8;
+        const segX = startX - i * 19;
+        const segY = centerY + Math.sin(i * 0.9) * 7;
         const radius = segRadius * (1 - (i / segments) * 0.35);
 
         const grad = pCtx.createRadialGradient(segX - 4, segY - 4, 2, segX, segY, radius);
@@ -1724,7 +1879,7 @@
         const s = SKINS[key];
 
         const btn1 = document.createElement('button');
-        btn1.className = `w-7 h-7 rounded-full border-2 transition transform hover:scale-110 flex items-center justify-center ${p1Config.skinKey === key ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`;
+        btn1.className = `w-6 h-6 rounded-full border-2 transition transform hover:scale-110 flex items-center justify-center ${p1Config.skinKey === key ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`;
         btn1.style.backgroundColor = s.hex;
         btn1.addEventListener('click', () => {
           p1Config.skinKey = key;
@@ -1734,7 +1889,7 @@
         paletteP1.appendChild(btn1);
 
         const btn2 = document.createElement('button');
-        btn2.className = `w-7 h-7 rounded-full border-2 transition transform hover:scale-110 flex items-center justify-center ${p2Config.skinKey === key ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`;
+        btn2.className = `w-6 h-6 rounded-full border-2 transition transform hover:scale-110 flex items-center justify-center ${p2Config.skinKey === key ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`;
         btn2.style.backgroundColor = s.hex;
         btn2.addEventListener('click', () => {
           p2Config.skinKey = key;
@@ -1745,18 +1900,96 @@
       });
     }
 
+    // --- OPPONENT SELECTION (BOT VS PVP) ---
+    const btnOpponentBot = document.getElementById('btnOpponentBot');
+    const btnOpponentPvP = document.getElementById('btnOpponentPvP');
+    const p2NameInputContainer = document.getElementById('p2NameInputContainer');
+    const botDifficultyContainer = document.getElementById('botDifficultyContainer');
+    const titleP2Card = document.getElementById('titleP2Card');
+    const p2ControlHint = document.getElementById('p2ControlHint');
+
+    btnOpponentBot.addEventListener('click', () => {
+      CONFIG.opponentType = 'bot';
+      btnOpponentBot.className = 'py-1.5 px-3 rounded-xl border border-cyan-400 bg-cyan-500/20 text-cyan-200 font-orbitron text-xs font-bold flex items-center justify-center gap-1.5 transition';
+      btnOpponentPvP.className = 'py-1.5 px-3 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-300 font-orbitron text-xs font-semibold flex items-center justify-center gap-1.5 transition';
+      
+      titleP2Card.innerText = "CYBER BOT (KOMPUTER)";
+      titleP2Card.className = "font-orbitron text-xs font-bold text-rose-300";
+      p2ControlHint.innerText = "[AI Bot]";
+      p2NameInputContainer.classList.add('hidden');
+      botDifficultyContainer.classList.remove('hidden');
+    });
+
+    btnOpponentPvP.addEventListener('click', () => {
+      CONFIG.opponentType = 'pvp';
+      btnOpponentPvP.className = 'py-1.5 px-3 rounded-xl border border-cyan-400 bg-cyan-500/20 text-cyan-200 font-orbitron text-xs font-bold flex items-center justify-center gap-1.5 transition';
+      btnOpponentBot.className = 'py-1.5 px-3 rounded-xl border border-slate-700 bg-slate-900/60 text-slate-300 font-orbitron text-xs font-semibold flex items-center justify-center gap-1.5 transition';
+      
+      titleP2Card.innerText = "PLAYER 2 (KANAN)";
+      titleP2Card.className = "font-orbitron text-xs font-bold text-rose-300";
+      p2ControlHint.innerText = "[Arah Panah / Sentuh]";
+      p2NameInputContainer.classList.remove('hidden');
+      botDifficultyContainer.classList.add('hidden');
+    });
+
+    // Bot Difficulty Buttons
+    document.querySelectorAll('.bot-diff-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        CONFIG.botDifficulty = e.target.getAttribute('data-diff');
+        document.querySelectorAll('.bot-diff-btn').forEach(b => {
+          b.classList.remove('bg-cyan-500/20', 'text-cyan-200', 'border-cyan-500/60');
+          b.classList.add('text-slate-300');
+        });
+        e.target.classList.add('bg-cyan-500/20', 'text-cyan-200', 'border-cyan-500/60');
+        e.target.classList.remove('text-slate-300');
+      });
+    });
+
+    // Phone Joystick Position Select
+    document.getElementById('selectPhoneJoyPos').addEventListener('change', (e) => {
+      CONFIG.phoneJoyPos = e.target.value;
+      applyPhoneControlsLayout();
+    });
+
+    // Zoom Quick Toggle
+    document.getElementById('btnQuickZoom').addEventListener('click', () => {
+      const sel = document.getElementById('selectDisplayScale');
+      if (CONFIG.scaleMode === 'auto') {
+        CONFIG.scaleMode = '0.85';
+      } else if (CONFIG.scaleMode === '0.85') {
+        CONFIG.scaleMode = '0.75';
+      } else if (CONFIG.scaleMode === '0.75') {
+        CONFIG.scaleMode = '1.0';
+      } else {
+        CONFIG.scaleMode = 'auto';
+      }
+      sel.value = CONFIG.scaleMode;
+      updateDisplayScaling();
+    });
+
+    document.getElementById('selectDisplayScale').addEventListener('change', (e) => {
+      CONFIG.scaleMode = e.target.value;
+      updateDisplayScaling();
+    });
+
+    // Start Button
     document.getElementById('btnStartGame').addEventListener('click', () => {
       sound.init();
-      p1Config.name = document.getElementById('inputP1Name').value.trim() || "Player 1";
-      p2Config.name = document.getElementById('inputP2Name').value.trim() || "Player 2";
-      CONFIG.wormSpeed = parseFloat(document.getElementById('selectWormSpeed').value) || 3.8;
-      CONFIG.joySize = document.getElementById('selectJoySize').value || 'md';
+      p1Config.name = document.getElementById('inputP1Name').value.trim() || "Cyber Blue";
+      if (CONFIG.opponentType === 'pvp') {
+        p2Config.name = document.getElementById('inputP2Name').value.trim() || "Neon Red";
+        p2Config.isBot = false;
+      } else {
+        p2Config.name = "Cyber Bot";
+        p2Config.isBot = true;
+      }
 
       document.getElementById('menuScreen').classList.add('hidden');
       initRound();
       startCountdown();
     });
 
+    // Preset Rules
     document.querySelectorAll('.preset-rule-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const target = e.currentTarget;
@@ -1770,18 +2003,19 @@
       });
     });
 
+    // Mode Toggle
     document.getElementById('btnModeTime').addEventListener('click', () => {
       CONFIG.gameMode = 'time';
-      document.getElementById('btnModeTime').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1.5';
-      document.getElementById('btnModeTarget').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1.5';
+      document.getElementById('btnModeTime').className = 'mode-select-btn py-1 px-2 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1 text-xs';
+      document.getElementById('btnModeTarget').className = 'mode-select-btn py-1 px-2 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1 text-xs';
       document.getElementById('timeAttackContainer').classList.remove('hidden');
       document.getElementById('targetSegmentContainer').classList.add('hidden');
     });
 
     document.getElementById('btnModeTarget').addEventListener('click', () => {
       CONFIG.gameMode = 'target';
-      document.getElementById('btnModeTarget').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1.5';
-      document.getElementById('btnModeTime').className = 'mode-select-btn py-1.5 px-3 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1.5';
+      document.getElementById('btnModeTarget').className = 'mode-select-btn py-1 px-2 rounded-lg border border-yellow-500/60 bg-yellow-500/20 text-yellow-200 font-bold flex items-center justify-center gap-1 text-xs';
+      document.getElementById('btnModeTime').className = 'mode-select-btn py-1 px-2 rounded-lg border border-slate-700 bg-slate-950/50 text-slate-300 font-semibold flex items-center justify-center gap-1 text-xs';
       document.getElementById('targetSegmentContainer').classList.remove('hidden');
       document.getElementById('timeAttackContainer').classList.add('hidden');
     });
@@ -1873,6 +2107,7 @@
       buildColorPalettes();
       renderPreviewWorm('previewCanvasP1', p1Config.skinKey);
       renderPreviewWorm('previewCanvasP2', p2Config.skinKey);
+      applyPhoneControlsLayout();
       requestAnimationFrame(gameLoop);
     };
   </script>
