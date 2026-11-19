@@ -34,6 +34,12 @@
       -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.12);
     }
+    /* HUD ringan tanpa backdrop-filter agar compositor IFP tidak lag saat canvas bergerak */
+    #gameHUD .glass-panel {
+      background: rgba(10, 16, 32, 0.92);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
     .custom-scrollbar::-webkit-scrollbar {
       width: 6px;
     }
@@ -154,7 +160,7 @@
     <!-- Player 1 Joystick (Dapat dipindah Kiri/Kanan jika Solo di HP) -->
     <div id="joystickZoneP1" class="absolute bottom-4 left-4 w-40 h-40 sm:w-48 sm:h-48 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
       <div id="joyBaseP1" class="w-28 h-28 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
-        <div id="joyStickP1" class="w-12 h-12 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
+        <div id="joyStickP1" class="w-12 h-12 rounded-full shadow-lg border-2 border-white absolute flex items-center justify-center">
           <span class="font-orbitron font-bold text-[9px] text-slate-900">P1</span>
         </div>
       </div>
@@ -164,7 +170,7 @@
     <!-- Player 2 Joystick (Otomatis tersembunyi saat VS BOT di HP) -->
     <div id="joystickZoneP2" class="absolute bottom-4 right-4 w-40 h-40 sm:w-48 sm:h-48 rounded-3xl pointer-events-auto flex items-center justify-center z-10">
       <div id="joyBaseP2" class="w-28 h-28 rounded-full border-2 border-dashed relative flex items-center justify-center shadow-lg">
-        <div id="joyStickP2" class="w-12 h-12 rounded-full shadow-lg border-2 border-white absolute transition-transform ease-out duration-75 flex items-center justify-center">
+        <div id="joyStickP2" class="w-12 h-12 rounded-full shadow-lg border-2 border-white absolute flex items-center justify-center">
           <span class="font-orbitron font-bold text-[9px] text-white">P2</span>
         </div>
       </div>
@@ -703,11 +709,12 @@
         }
       }
 
-      updateAI(bubbles) {
+      updateAI(bubbles, dt = 1) {
         if (!this.isBot || this.hasAnsweredCurrent) return;
 
-        this.botThinkTimer++;
-        if (this.botThinkTimer % 12 === 0 || !this.botTargetBubble || !this.botTargetBubble.alive) {
+        this.botThinkTimer += dt;
+        if (this.botThinkTimer >= 12 || !this.botTargetBubble || !this.botTargetBubble.alive) {
+          this.botThinkTimer = 0;
           const aliveBubbles = bubbles.filter(b => b.alive);
           if (aliveBubbles.length === 0) return;
 
@@ -751,8 +758,8 @@
         }
       }
 
-      update(arenaWidth, arenaHeight) {
-        this.squirmPhase += 0.12;
+      update(arenaWidth, arenaHeight, dt = 1) {
+        this.squirmPhase += 0.12 * dt;
 
         const mag = Math.hypot(this.inputVector.x, this.inputVector.y);
         if (mag > 0.15) {
@@ -760,12 +767,15 @@
           let diff = targetAngle - this.angle;
           while (diff < -Math.PI) diff += Math.PI * 2;
           while (diff > Math.PI) diff -= Math.PI * 2;
-          this.angle += diff * (this.isBot ? 0.14 : 0.18);
+          const baseTurn = this.isBot ? 0.14 : 0.18;
+          const turnFactor = 1 - Math.pow(1 - baseTurn, dt);
+          this.angle += diff * turnFactor;
         }
 
         const squirmOffset = Math.sin(this.squirmPhase) * 0.35;
-        this.x += Math.cos(this.angle + squirmOffset) * this.speed;
-        this.y += Math.sin(this.angle + squirmOffset) * this.speed;
+        const moveStep = this.speed * getArenaSpeedScale() * dt;
+        this.x += Math.cos(this.angle + squirmOffset) * moveStep;
+        this.y += Math.sin(this.angle + squirmOffset) * moveStep;
 
         const pad = CONFIG.headRadius + 20;
         if (this.x < pad) { this.x = pad; this.angle = Math.PI - this.angle; }
@@ -779,7 +789,7 @@
 
         for (let i = 0; i < this.segments.length; i++) {
           const seg = this.segments[i];
-          if (seg.scale < 1) seg.scale = Math.min(1, seg.scale + 0.08);
+          if (seg.scale < 1) seg.scale = Math.min(1, seg.scale + 0.08 * dt);
 
           const dx = leaderX - seg.x;
           const dy = leaderY - seg.y;
@@ -795,59 +805,29 @@
         }
 
         if (this.statusBadge) {
-          this.statusBadge.life -= 0.02;
+          this.statusBadge.life -= 0.02 * dt;
           if (this.statusBadge.life <= 0) this.statusBadge = null;
         }
       }
 
       draw(ctx) {
         ctx.save();
-        const skin = SKINS[this.skinKey] || SKINS.blue;
-
-        ctx.shadowBlur = 18;
-        ctx.shadowColor = skin.glow;
+        const sprites = getSkinSprites(this.skinKey);
+        const segScaleRatio = sprites.segDrawRatio;
 
         for (let i = this.segments.length - 1; i >= 0; i--) {
           const seg = this.segments[i];
           const taper = (1 - (i / this.segments.length) * 0.45) * seg.scale;
           const radius = CONFIG.segmentRadius * taper;
-
-          const lightX = seg.x - radius * 0.35;
-          const lightY = seg.y - radius * 0.35;
-          const grad = ctx.createRadialGradient(lightX, lightY, radius * 0.1, seg.x, seg.y, radius);
-          grad.addColorStop(0, skin.tailColors[0]);
-          grad.addColorStop(0.35, skin.tailColors[1]);
-          grad.addColorStop(0.75, skin.tailColors[2]);
-          grad.addColorStop(1, skin.tailColors[3]);
-
-          ctx.beginPath();
-          ctx.arc(seg.x, seg.y, radius, 0, Math.PI * 2);
-          ctx.fillStyle = grad;
-          ctx.fill();
-
-          ctx.lineWidth = 1.4;
-          ctx.strokeStyle = skin.hex;
-          ctx.stroke();
+          const drawSize = radius * 2 * segScaleRatio;
+          const half = drawSize * 0.5;
+          ctx.drawImage(sprites.seg, seg.x - half, seg.y - half, drawSize, drawSize);
         }
 
         const hRadius = CONFIG.headRadius;
-        const headGrad = ctx.createRadialGradient(
-          this.x - hRadius * 0.35, this.y - hRadius * 0.35, hRadius * 0.1,
-          this.x, this.y, hRadius
-        );
-        headGrad.addColorStop(0, skin.headColors[0]);
-        headGrad.addColorStop(0.35, skin.headColors[1]);
-        headGrad.addColorStop(0.8, skin.headColors[2]);
-        headGrad.addColorStop(1, skin.headColors[3]);
-
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, hRadius, 0, Math.PI * 2);
-        ctx.fillStyle = headGrad;
-        ctx.fill();
-
-        ctx.lineWidth = 2.5;
-        ctx.strokeStyle = '#ffffff';
-        ctx.stroke();
+        const headDrawSize = hRadius * 2 * sprites.headDrawRatio;
+        const headHalf = headDrawSize * 0.5;
+        ctx.drawImage(sprites.head, this.x - headHalf, this.y - headHalf, headDrawSize, headDrawSize);
 
         const eyeOffsetDist = hRadius * 0.55;
         const eyeAngleOffset = 0.55;
@@ -887,8 +867,6 @@
         ctx.beginPath();
         ctx.arc(antX, antY, 3.5, 0, Math.PI * 2);
         ctx.fillStyle = '#ffffff';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = '#ffffff';
         ctx.fill();
 
         if (this.hasAnsweredCurrent) {
@@ -917,43 +895,24 @@
         this.pulse = Math.random() * Math.PI * 2;
         this.alive = true;
       }
-      update() { this.pulse += 0.04; }
+      update(dt = 1) { this.pulse += 0.04 * dt; }
       draw(ctx) {
         if (!this.alive) return;
-        ctx.save();
         const currentR = this.radius + Math.sin(this.pulse) * 2.5;
+        const bSprite = getBubbleSprite();
+        const drawSize = currentR * 2 * bSprite.drawRatio;
+        const half = drawSize * 0.5;
 
-        ctx.shadowBlur = 16;
-        ctx.shadowColor = 'rgba(0, 240, 255, 0.7)';
+        ctx.drawImage(bSprite.canvas, this.x - half, this.y - half, drawSize, drawSize);
 
-        const grad = ctx.createRadialGradient(
-          this.x - currentR * 0.3, this.y - currentR * 0.3, currentR * 0.1,
-          this.x, this.y, currentR
-        );
-        grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
-        grad.addColorStop(0.3, 'rgba(0, 240, 255, 0.45)');
-        grad.addColorStop(0.75, 'rgba(20, 40, 80, 0.65)');
-        grad.addColorStop(1, 'rgba(0, 150, 255, 0.9)');
-
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, currentR, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, currentR + 3, 0, Math.PI * 2);
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.75)';
-        ctx.stroke();
-
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = '#00f0ff';
         ctx.font = "900 24px Orbitron, sans-serif";
-        ctx.fillStyle = "#ffffff";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(3, 18, 42, 0.85)";
+        ctx.strokeText(this.value.toString(), this.x, this.y);
+        ctx.fillStyle = "#ffffff";
         ctx.fillText(this.value.toString(), this.x, this.y);
-        ctx.restore();
       }
     }
 
@@ -968,13 +927,11 @@
         this.decay = Math.random() * 0.025 + 0.015;
         this.size = Math.random() * 4 + 2;
       }
-      update() { this.x += this.vx; this.y += this.vy; this.alpha -= this.decay; }
+      update(dt = 1) { this.x += this.vx * dt; this.y += this.vy * dt; this.alpha -= this.decay * dt; }
       draw(ctx) {
         ctx.save();
         ctx.globalAlpha = Math.max(0, this.alpha);
         ctx.fillStyle = this.color;
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
@@ -987,15 +944,16 @@
         this.text = text; this.x = x; this.y = y; this.color = color;
         this.vy = -1.6; this.alpha = 1; this.life = 1.0;
       }
-      update() { this.y += this.vy; this.life -= 0.02; this.alpha = Math.max(0, this.life); }
+      update(dt = 1) { this.y += this.vy * dt; this.life -= 0.02 * dt; this.alpha = Math.max(0, this.life); }
       draw(ctx) {
         ctx.save();
         ctx.globalAlpha = this.alpha;
         ctx.font = "900 16px Orbitron, sans-serif";
-        ctx.fillStyle = this.color;
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = this.color;
         ctx.textAlign = "center";
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(3, 7, 18, 0.85)";
+        ctx.strokeText(this.text, this.x, this.y);
+        ctx.fillStyle = this.color;
         ctx.fillText(this.text, this.x, this.y);
         ctx.restore();
       }
@@ -1003,8 +961,177 @@
 
     // --- CANVAS & SCREEN CALIBRATION ---
     const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { alpha: false });
     const uiContainer = document.getElementById('uiScaleContainer');
+
+    // --- OFFSCREEN SPRITE & ARENA CACHING (IFP PERFORMANCE OPTIMIZATION) ---
+    const skinSpriteCache = {};
+    let bubbleSpriteCache = null;
+    let arenaCacheCanvas = null;
+    let arenaCacheState = { w: 0, h: 0, lastChance: null };
+    let lastFrameTime = 0;
+
+    function getArenaSpeedScale() {
+      const diag = Math.hypot(window.innerWidth, window.innerHeight);
+      // Referensi 1280x720 (diag ~1468.6px) agar kecepatan relatif sama di HP, Laptop, maupun IFP 4K
+      return Math.max(0.85, Math.min(diag / 1468.6, 2.2));
+    }
+
+    function getSkinSprites(skinKey) {
+      const key = SKINS[skinKey] ? skinKey : 'blue';
+      if (skinSpriteCache[key]) return skinSpriteCache[key];
+
+      const skin = SKINS[key];
+      const pad = 22;
+
+      // Segment sprite
+      const segR = CONFIG.segmentRadius;
+      const segSize = (segR + pad) * 2;
+      const segC = document.createElement('canvas');
+      segC.width = segSize;
+      segC.height = segSize;
+      const sCtx = segC.getContext('2d');
+      const cx = segSize / 2;
+      const cy = segSize / 2;
+
+      sCtx.shadowBlur = 16;
+      sCtx.shadowColor = skin.glow;
+      const sGrad = sCtx.createRadialGradient(cx - segR * 0.35, cy - segR * 0.35, segR * 0.1, cx, cy, segR);
+      sGrad.addColorStop(0, skin.tailColors[0]);
+      sGrad.addColorStop(0.35, skin.tailColors[1]);
+      sGrad.addColorStop(0.75, skin.tailColors[2]);
+      sGrad.addColorStop(1, skin.tailColors[3]);
+      sCtx.beginPath();
+      sCtx.arc(cx, cy, segR, 0, Math.PI * 2);
+      sCtx.fillStyle = sGrad;
+      sCtx.fill();
+      sCtx.shadowBlur = 0;
+      sCtx.lineWidth = 1.4;
+      sCtx.strokeStyle = skin.hex;
+      sCtx.stroke();
+
+      // Head sprite
+      const headR = CONFIG.headRadius;
+      const headSize = (headR + pad) * 2;
+      const headC = document.createElement('canvas');
+      headC.width = headSize;
+      headC.height = headSize;
+      const hCtx = headC.getContext('2d');
+      const hx = headSize / 2;
+      const hy = headSize / 2;
+
+      hCtx.shadowBlur = 18;
+      hCtx.shadowColor = skin.glow;
+      const hGrad = hCtx.createRadialGradient(hx - headR * 0.35, hy - headR * 0.35, headR * 0.1, hx, hy, headR);
+      hGrad.addColorStop(0, skin.headColors[0]);
+      hGrad.addColorStop(0.35, skin.headColors[1]);
+      hGrad.addColorStop(0.8, skin.headColors[2]);
+      hGrad.addColorStop(1, skin.headColors[3]);
+      hCtx.beginPath();
+      hCtx.arc(hx, hy, headR, 0, Math.PI * 2);
+      hCtx.fillStyle = hGrad;
+      hCtx.fill();
+      hCtx.shadowBlur = 0;
+      hCtx.lineWidth = 2.5;
+      hCtx.strokeStyle = '#ffffff';
+      hCtx.stroke();
+
+      skinSpriteCache[key] = {
+        seg: segC,
+        segDrawRatio: segSize / (segR * 2),
+        head: headC,
+        headDrawRatio: headSize / (headR * 2)
+      };
+      return skinSpriteCache[key];
+    }
+
+    function getBubbleSprite() {
+      if (bubbleSpriteCache) return bubbleSpriteCache;
+      const r = CONFIG.bubbleRadius;
+      const pad = 22;
+      const size = (r + pad) * 2;
+      const c = document.createElement('canvas');
+      c.width = size;
+      c.height = size;
+      const bCtx = c.getContext('2d');
+      const cx = size / 2;
+      const cy = size / 2;
+
+      bCtx.shadowBlur = 16;
+      bCtx.shadowColor = 'rgba(0, 240, 255, 0.7)';
+      const grad = bCtx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, r * 0.1, cx, cy, r);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+      grad.addColorStop(0.3, 'rgba(0, 240, 255, 0.45)');
+      grad.addColorStop(0.75, 'rgba(20, 40, 80, 0.65)');
+      grad.addColorStop(1, 'rgba(0, 150, 255, 0.9)');
+      bCtx.beginPath();
+      bCtx.arc(cx, cy, r, 0, Math.PI * 2);
+      bCtx.fillStyle = grad;
+      bCtx.fill();
+
+      bCtx.shadowBlur = 0;
+      bCtx.beginPath();
+      bCtx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+      bCtx.lineWidth = 2;
+      bCtx.strokeStyle = 'rgba(0, 240, 255, 0.75)';
+      bCtx.stroke();
+
+      bubbleSpriteCache = { canvas: c, drawRatio: size / (r * 2) };
+      return bubbleSpriteCache;
+    }
+
+    function ensureArenaCache(arenaW, arenaH, isLastChance) {
+      if (
+        arenaCacheCanvas &&
+        arenaCacheState.w === arenaW &&
+        arenaCacheState.h === arenaH &&
+        arenaCacheState.lastChance === isLastChance
+      ) {
+        return arenaCacheCanvas;
+      }
+
+      if (!arenaCacheCanvas) arenaCacheCanvas = document.createElement('canvas');
+      arenaCacheCanvas.width = Math.max(1, Math.floor(arenaW));
+      arenaCacheCanvas.height = Math.max(1, Math.floor(arenaH));
+      arenaCacheState = { w: arenaW, h: arenaH, lastChance: isLastChance };
+
+      const aCtx = arenaCacheCanvas.getContext('2d', { alpha: false });
+      aCtx.fillStyle = '#030712';
+      aCtx.fillRect(0, 0, arenaW, arenaH);
+
+      const gridSpacing = 45;
+      aCtx.lineWidth = 1;
+      aCtx.strokeStyle = isLastChance ? 'rgba(255, 0, 50, 0.15)' : 'rgba(0, 240, 255, 0.07)';
+      aCtx.beginPath();
+      for (let x = 0; x < arenaW; x += gridSpacing) {
+        aCtx.moveTo(x, 0);
+        aCtx.lineTo(x, arenaH);
+      }
+      for (let y = 0; y < arenaH; y += gridSpacing) {
+        aCtx.moveTo(0, y);
+        aCtx.lineTo(arenaW, y);
+      }
+      aCtx.stroke();
+
+      const pad = 12;
+      aCtx.save();
+      aCtx.lineWidth = 3;
+      aCtx.strokeStyle = isLastChance ? '#ff0044' : '#00f0ff';
+      aCtx.shadowBlur = isLastChance ? 20 : 12;
+      aCtx.shadowColor = isLastChance ? '#ff0000' : '#00f0ff';
+      aCtx.strokeRect(pad, pad, arenaW - pad * 2, arenaH - pad * 2);
+
+      const cLen = 28;
+      aCtx.beginPath();
+      aCtx.moveTo(pad, pad + cLen); aCtx.lineTo(pad, pad); aCtx.lineTo(pad + cLen, pad);
+      aCtx.moveTo(arenaW - pad - cLen, pad); aCtx.lineTo(arenaW - pad, pad); aCtx.lineTo(arenaW - pad, pad + cLen);
+      aCtx.moveTo(pad, arenaH - pad - cLen); aCtx.lineTo(pad, arenaH - pad); aCtx.lineTo(pad + cLen, arenaH - pad);
+      aCtx.moveTo(arenaW - pad - cLen, arenaH - pad); aCtx.lineTo(arenaW - pad, arenaH - pad); aCtx.lineTo(arenaW - pad, arenaH - pad - cLen);
+      aCtx.stroke();
+      aCtx.restore();
+
+      return arenaCacheCanvas;
+    }
 
     let wormP1 = null;
     let wormP2 = null;
@@ -1041,9 +1168,11 @@
     }
 
     function resizeCanvas() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
+      const pixelArea = window.innerWidth * window.innerHeight;
+      const rawDpr = window.devicePixelRatio || 1;
+      const dpr = pixelArea >= 1600000 ? 1 : Math.min(rawDpr, 1.5);
+      canvas.width = Math.floor(window.innerWidth * dpr);
+      canvas.height = Math.floor(window.innerHeight * dpr);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
 
@@ -1328,6 +1457,41 @@
     window.addEventListener('touchend', handleTouchEnd, { passive: false });
     window.addEventListener('touchcancel', handleTouchEnd, { passive: false });
 
+    // Fallback Mouse / Pen drag pada zona joystick (untuk IFP mode mouse/stylus)
+    let mouseDragPlayer = null;
+    joyZoneP1.addEventListener('mousedown', (e) => {
+      sound.init();
+      const rect = joyZoneP1.getBoundingClientRect();
+      mouseDragPlayer = { player: 1, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
+    });
+    joyZoneP2.addEventListener('mousedown', (e) => {
+      if (CONFIG.opponentType !== 'pvp') return;
+      sound.init();
+      const rect = joyZoneP2.getBoundingClientRect();
+      mouseDragPlayer = { player: 2, originX: rect.left + rect.width / 2, originY: rect.top + rect.height / 2 };
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!mouseDragPlayer) return;
+      const dx = (e.clientX - mouseDragPlayer.originX) / CONFIG.effectiveScale;
+      const dy = (e.clientY - mouseDragPlayer.originY) / CONFIG.effectiveScale;
+      const dist = Math.hypot(dx, dy);
+      const clamped = Math.min(dist, maxJoyRadius);
+      const angle = Math.atan2(dy, dx);
+      if (mouseDragPlayer.player === 1) {
+        joyStickP1.style.transform = `translate(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px)`;
+        if (wormP1 && dist > 5) wormP1.inputVector = { x: Math.cos(angle), y: Math.sin(angle) };
+      } else {
+        joyStickP2.style.transform = `translate(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px)`;
+        if (wormP2 && dist > 5) wormP2.inputVector = { x: Math.cos(angle), y: Math.sin(angle) };
+      }
+    });
+    window.addEventListener('mouseup', () => {
+      if (!mouseDragPlayer) return;
+      if (mouseDragPlayer.player === 1) joyStickP1.style.transform = 'translate(0px, 0px)';
+      else joyStickP2.style.transform = 'translate(0px, 0px)';
+      mouseDragPlayer = null;
+    });
+
     // Keyboard
     const keysPressed = {};
     window.addEventListener('keydown', (e) => {
@@ -1461,90 +1625,70 @@
       } else p2Badge.style.opacity = '0';
     }
 
-    function drawCyberArena() {
+    function drawCyberArena(dt = 1) {
       const arenaW = window.innerWidth;
       const arenaH = window.innerHeight;
-      const gridSpacing = 45;
 
-      ctx.lineWidth = 1;
-      ctx.strokeStyle = lastChanceActive ? 'rgba(255, 0, 50, 0.15)' : 'rgba(0, 240, 255, 0.07)';
+      const bgCache = ensureArenaCache(arenaW, arenaH, lastChanceActive);
+      ctx.drawImage(bgCache, 0, 0, arenaW, arenaH);
 
-      for (let x = 0; x < arenaW; x += gridSpacing) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, arenaH); ctx.stroke();
-      }
-      for (let y = 0; y < arenaH; y += gridSpacing) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(arenaW, y); ctx.stroke();
-      }
-
-      ambientParticles.forEach(p => {
-        p.x += p.vx; p.y += p.vy;
+      ctx.fillStyle = lastChanceActive ? 'rgba(255, 60, 60, 0.38)' : 'rgba(0, 240, 255, 0.35)';
+      for (let i = 0; i < ambientParticles.length; i++) {
+        const p = ambientParticles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
         if (p.x < 0) p.x = arenaW;
         if (p.x > arenaW) p.x = 0;
         if (p.y < 0) p.y = arenaH;
         if (p.y > arenaH) p.y = 0;
 
-        ctx.fillStyle = lastChanceActive ? `rgba(255, 60, 60, ${p.alpha})` : `rgba(0, 240, 255, ${p.alpha})`;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      ctx.save();
-      const pad = 12;
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = lastChanceActive ? '#ff0044' : '#00f0ff';
-      ctx.shadowBlur = lastChanceActive ? 25 : 15;
-      ctx.shadowColor = lastChanceActive ? '#ff0000' : '#00f0ff';
-      ctx.strokeRect(pad, pad, arenaW - pad * 2, arenaH - pad * 2);
-
-      const cLen = 28;
-      ctx.beginPath(); ctx.moveTo(pad, pad + cLen); ctx.lineTo(pad, pad); ctx.lineTo(pad + cLen, pad); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(arenaW - pad - cLen, pad); ctx.lineTo(arenaW - pad, pad); ctx.lineTo(arenaW - pad, pad + cLen); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(pad, arenaH - pad - cLen); ctx.lineTo(pad, arenaH - pad); ctx.lineTo(pad + cLen, arenaH - pad); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(arenaW - pad - cLen, arenaH - pad); ctx.lineTo(arenaW - pad, arenaH - pad); ctx.lineTo(arenaW - pad, arenaH - pad - cLen); ctx.stroke();
-      ctx.restore();
+        ctx.fillRect(p.x - p.radius, p.y - p.radius, p.radius * 2, p.radius * 2);
+      }
     }
 
-    function gameLoop() {
+    function gameLoop(timestamp) {
+      if (!lastFrameTime) lastFrameTime = timestamp || performance.now();
+      const now = timestamp || performance.now();
+      const rawDt = (now - lastFrameTime) / 16.6667;
+      lastFrameTime = now;
+      const dt = Math.min(Math.max(rawDt, 0.2), 3.0);
+
       const arenaW = window.innerWidth;
       const arenaH = window.innerHeight;
 
-      ctx.fillStyle = '#030712';
-      ctx.fillRect(0, 0, arenaW, arenaH);
-
-      drawCyberArena();
+      drawCyberArena(dt);
 
       if (currentState === GameState.PLAYING) {
-        wormP1.update(arenaW, arenaH);
-        
+        wormP1.update(arenaW, arenaH, dt);
+
         // Update Bot AI if enabled
         if (wormP2 && wormP2.isBot) {
-          wormP2.updateAI(bubbles);
+          wormP2.updateAI(bubbles, dt);
         }
-        wormP2.update(arenaW, arenaH);
+        wormP2.update(arenaW, arenaH, dt);
 
         checkCollisions(wormP1);
         checkCollisions(wormP2);
       }
 
-      bubbles.forEach(b => {
-        b.update();
-        b.draw(ctx);
-      });
+      for (let i = 0; i < bubbles.length; i++) {
+        bubbles[i].update(dt);
+        bubbles[i].draw(ctx);
+      }
 
       if (wormP1) wormP1.draw(ctx);
       if (wormP2) wormP2.draw(ctx);
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.update();
+        p.update(dt);
         p.draw(ctx);
         if (p.alpha <= 0) particles.splice(i, 1);
       }
 
       for (let i = floatingTexts.length - 1; i >= 0; i--) {
         const t = floatingTexts[i];
-        t.update();
+        t.update(dt);
         t.draw(ctx);
         if (t.life <= 0) floatingTexts.splice(i, 1);
       }
